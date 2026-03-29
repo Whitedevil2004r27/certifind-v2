@@ -33,7 +33,7 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-white/10 bg-black/40 backdrop-blur-2xl transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1400px] mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center gap-12">
             <Link href="/" className="flex items-center gap-2 group">
@@ -44,8 +44,8 @@ export default function Navbar() {
             
             <div className="hidden md:flex items-center space-x-1">
               <Link href="/" className="text-neutral-400 hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-white/5">Home</Link>
-              <Link href="/free" className="text-neutral-400 hover:text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-emerald-500/10">Free Courses</Link>
-              <Link href="/paid" className="text-neutral-400 hover:text-amber-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-amber-500/10">Paid Courses</Link>
+              <Link href="/free-courses" className="text-neutral-400 hover:text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-emerald-500/10">Free Courses</Link>
+              <Link href="/paid-courses" className="text-neutral-400 hover:text-amber-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-amber-500/10">Paid Courses</Link>
               {user && (
                 <Link href="/bookmarks" className="text-neutral-400 hover:text-rose-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-rose-500/10">Bookmarks</Link>
               )}
@@ -54,13 +54,21 @@ export default function Navbar() {
 
           <div className="flex items-center flex-shrink-0 gap-4">
             {user ? (
-              <div className="flex items-center gap-2 bg-white/5 border border-white/10 pl-1.5 pr-1.5 py-1.5 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.1)]">
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 pl-1.5 pr-2 py-1.5 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.1)]">
                 <img 
                   src={user.user_metadata?.avatar_url || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} 
                   alt="Avatar" 
                   className="w-9 h-9 rounded-full border border-white/20 object-cover"
-                  title={user.email}
                 />
+                
+                <div className="flex flex-col hidden sm:flex">
+                  <span className="text-white text-sm font-bold truncate max-w-[120px]">
+                    {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "Student"}
+                  </span>
+                  <span className="text-certifind-accent text-[10px] uppercase font-black tracking-widest leading-none">
+                    Verified
+                  </span>
+                </div>
                 <button 
                   onClick={handleLogout}
                   className="text-neutral-400 hover:text-rose-400 transition-colors bg-black/40 hover:bg-rose-500/10 p-2 rounded-full"

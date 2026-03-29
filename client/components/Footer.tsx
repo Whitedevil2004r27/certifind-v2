@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/5 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/5 blur-[150px] rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+      <div className="max-w-[1400px] mx-auto px-6 relative z-10">
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 mb-20">
           
@@ -64,10 +64,10 @@ export default function Footer() {
         {/* Bottom Footer Credits */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-white/5">
           <div className="flex gap-6 items-center flex-wrap">
-            <Link href="/free" className="text-neutral-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
+            <Link href="/free-courses" className="text-neutral-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Free Tier
             </Link>
-            <Link href="/paid" className="text-neutral-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
+            <Link href="/paid-courses" className="text-neutral-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Premium
             </Link>
             <Link href="/bookmarks" className="text-neutral-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">

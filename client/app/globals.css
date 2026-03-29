@@ -4,6 +4,6 @@
 
 @layer base {
   body {
-    @apply bg-neutral-950 text-neutral-50;
+    @apply bg-certifind-bg text-neutral-50 h-full w-full font-sans antialiased;
   }
 }

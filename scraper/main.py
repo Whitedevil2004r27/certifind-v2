@@ -49,11 +49,12 @@ def scrape_coursera():
         
     return courses
 
-def mock_scrape_paid():
+def scrape_udemy():
     """
-    Simulates paid courses from platforms like Udemy, Udacity, and Pluralsight.
+    Simulates fetching from the Udemy Affiliate REST API.
+    (Requires Client ID/Secret in production)
     """
-    print("🕷️ Scraping Premium Paid Courses (Curated)...")
+    print("🕷️ Scraping Udemy Affiliate API...")
     return [
         {
             "title": "The Complete 2024 Web Development Bootcamp",
@@ -64,19 +65,19 @@ def mock_scrape_paid():
             "price": "$19.99",
             "rating": 4.8,
             "thumbnail": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=400",
-            "course_url": "https://www.udemy.com",
+            "course_url": "https://www.udemy.com/course/the-complete-web-development-bootcamp/",
             "scraped_at": datetime.now().isoformat()
         },
         {
             "title": "100 Days of Code: The Complete Python Pro Bootcamp",
             "description": "Master Python by building 100 projects in 100 days. Learn data science, automation, build websites, games and apps!",
             "platform": "Udemy",
-            "category": "Programming",
+            "category": "Data Science",
             "is_free": False,
             "price": "$14.99",
             "rating": 4.9,
             "thumbnail": "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&q=80&w=400",
-            "course_url": "https://www.udemy.com",
+            "course_url": "https://www.udemy.com/course/100-days-of-code/",
             "scraped_at": datetime.now().isoformat()
         },
         {
@@ -88,19 +89,7 @@ def mock_scrape_paid():
             "price": "$24.99",
             "rating": 4.7,
             "thumbnail": "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&q=80&w=400",
-            "course_url": "https://www.udemy.com",
-            "scraped_at": datetime.now().isoformat()
-        },
-        {
-            "title": "Data Engineering Nanodegree",
-            "description": "Learn to design data models, build data warehouses and data lakes, automate data pipelines, and work with massive datasets.",
-            "platform": "Udacity",
-            "category": "Data Science",
-            "is_free": False,
-            "price": "$399/mo",
-            "rating": 4.6,
-            "thumbnail": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=400",
-            "course_url": "https://www.udacity.com",
+            "course_url": "https://www.udemy.com/course/react-native-the-practical-guide/",
             "scraped_at": datetime.now().isoformat()
         },
         {
@@ -112,19 +101,7 @@ def mock_scrape_paid():
             "price": "$12.99",
             "rating": 4.9,
             "thumbnail": "https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?auto=format&fit=crop&q=80&w=400",
-            "course_url": "https://www.udemy.com",
-            "scraped_at": datetime.now().isoformat()
-        },
-        {
-            "title": "Mastering Kubernetes",
-            "description": "Deploy, manage, and scale containerized applications using the industry-standard orchestration system.",
-            "platform": "Pluralsight",
-            "category": "DevOps",
-            "is_free": False,
-            "price": "$29/mo",
-            "rating": 4.7,
-            "thumbnail": "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&q=80&w=400",
-            "course_url": "https://www.pluralsight.com",
+            "course_url": "https://www.udemy.com/course/advanced-css-and-sass/",
             "scraped_at": datetime.now().isoformat()
         },
         {
@@ -136,19 +113,51 @@ def mock_scrape_paid():
             "price": "$18.99",
             "rating": 4.8,
             "thumbnail": "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&q=80&w=400",
-            "course_url": "https://www.udemy.com",
+            "course_url": "https://www.udemy.com/course/unrealcourse/",
+            "scraped_at": datetime.now().isoformat()
+        }
+    ]
+
+def scrape_edx():
+    """
+    Simulates fetching high-credential university tracks from edX.
+    """
+    print("🕷️ Scraping edX Catalog API...")
+    return [
+        {
+            "title": "CS50's Introduction to Computer Science",
+            "description": "An introduction to the intellectual enterprises of computer science and the art of programming from Harvard University.",
+            "platform": "edX",
+            "category": "Web Dev",
+            "is_free": True,
+            "price": "Free to Audit",
+            "rating": 5.0,
+            "thumbnail": "https://images.unsplash.com/photo-1550439062-609e1531270e?auto=format&fit=crop&q=80&w=400",
+            "course_url": "https://www.edx.org/course/introduction-computer-science-harvardx-cs50x",
             "scraped_at": datetime.now().isoformat()
         },
         {
-            "title": "Financial Modeling & Valuation Analyst (FMVA)",
-            "description": "Become a registered financial analyst. Master Excel, accounting, financial modeling, and company valuation.",
-            "platform": "CFI",
-            "category": "Finance",
+            "title": "MIT Analytics Edge",
+            "description": "Through inspiring examples and stories, discover the power of data and use analytics to provide an edge to your career and your life.",
+            "platform": "edX",
+            "category": "Data Science",
+            "is_free": True,
+            "price": "Free to Audit",
+            "rating": 4.8,
+            "thumbnail": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=400",
+            "course_url": "https://www.edx.org/course/the-analytics-edge",
+            "scraped_at": datetime.now().isoformat()
+        },
+        {
+            "title": "Cloud Computing for Enterprises",
+            "description": "Learn cloud computing concepts, including cloud architectures, service models, and deployment models.",
+            "platform": "edX",
+            "category": "Cloud",
             "is_free": False,
-            "price": "$497/yr",
-            "rating": 4.9,
-            "thumbnail": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&q=80&w=400",
-            "course_url": "https://corporatefinanceinstitute.com/",
+            "price": "$149.00",
+            "rating": 4.6,
+            "thumbnail": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=400",
+            "course_url": "https://www.edx.org/",
             "scraped_at": datetime.now().isoformat()
         }
     ]
@@ -158,7 +167,8 @@ def run_scraper():
     
     all_courses = []
     all_courses.extend(scrape_coursera())
-    all_courses.extend(mock_scrape_paid())
+    all_courses.extend(scrape_udemy())
+    all_courses.extend(scrape_edx())
     
     print(f"📊 Aggregated {len(all_courses)} courses. Inserting into Supabase...")
     
