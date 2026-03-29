@@ -27,7 +27,10 @@ export default function AnalyzerPage() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Analysis failed. Please ensure the file is a valid PDF.");
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.details || errData.error || "Analysis failed. Please ensure the file is a valid PDF.");
+      }
       const data = await res.json();
       setResult(data);
     } catch (err: any) {

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-// More robust import for pdf-parse in Next.js/Vercel environments
-const pdf = require('pdf-parse/lib/pdf-parse.js');
+// Standard import for whitelisted serverExternalPackages
+const pdf = require('pdf-parse');
 
 export async function POST(request: Request) {
   try {

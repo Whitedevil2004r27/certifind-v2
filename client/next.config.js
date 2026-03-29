@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  serverExternalPackages: ['pdf-parse'],
   images: {
     domains: ['img-c.udemycdn.com', 'd3njjcbhbojbot.cloudfront.net', 'media.licdn.com', 'loremflickr.com'],
   },
