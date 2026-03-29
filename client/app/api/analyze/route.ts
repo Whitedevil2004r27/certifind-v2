@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-const pdf = require('pdf-parse');
+
+// More robust import for pdf-parse in Next.js/Vercel environments
+const pdf = require('pdf-parse/lib/pdf-parse.js');
 
 export async function POST(request: Request) {
   try {
@@ -8,6 +10,7 @@ export async function POST(request: Request) {
     const file = formData.get('resume') as File;
 
     if (!file) {
+      console.error('Analyzer: No file provided');
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
@@ -15,8 +18,22 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
-    // Extract text from PDF
-    const data = await pdf(buffer);
+    // Extract text from PDF with enhanced error handling
+    let data;
+    try {
+      data = await pdf(buffer);
+    } catch (parseError: any) {
+      console.error('PDF Parse Internal Error:', parseError.message, parseError.stack);
+      return NextResponse.json({ 
+        error: 'PDF parsing failed on server', 
+        details: parseError.message 
+      }, { status: 422 });
+    }
+    
+    if (!data || !data.text) {
+      throw new Error('No text extracted from PDF');
+    }
+    
     const resumeText = data.text.toLowerCase();
 
     // 1. Fetch all unique departments and tags from the database to create a skill map
