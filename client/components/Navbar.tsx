@@ -61,17 +61,17 @@ export default function Navbar() {
                   className="w-9 h-9 rounded-full border border-white/20 object-cover"
                 />
                 
-                <div className="flex flex-col hidden sm:flex">
+                <div className="flex flex-col">
                   <span className="text-white text-sm font-bold truncate max-w-[120px]">
                     {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "Student"}
                   </span>
-                  <span className="text-certifind-accent text-[10px] uppercase font-black tracking-widest leading-none">
+                  <span className="text-certifind-accent text-[10px] uppercase font-black tracking-widest leading-none mt-0.5">
                     Verified
                   </span>
                 </div>
                 <button 
                   onClick={handleLogout}
-                  className="text-neutral-400 hover:text-rose-400 transition-colors bg-black/40 hover:bg-rose-500/10 p-2 rounded-full"
+                  className="text-neutral-400 hover:text-rose-400 transition-colors bg-black/40 hover:bg-rose-500/10 p-2 rounded-full ml-1"
                   title="Sign out"
                 >
                   <LogOut className="w-4 h-4" />
