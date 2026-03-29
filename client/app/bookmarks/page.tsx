@@ -80,7 +80,7 @@ export default function BookmarksPage() {
       {courses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
           {courses.map((course) => (
-            <CourseCard key={course.id} course={course} />
+            <CourseCard key={course.course_id} course={course} />
           ))}
         </div>
       ) : (
