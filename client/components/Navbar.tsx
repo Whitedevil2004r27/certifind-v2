@@ -56,6 +56,15 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center flex-shrink-0 gap-4">
+            {/* Mobile AI Analyzer Shortcut */}
+            <Link 
+              href="/analyzer" 
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 group"
+              title="AI Analyzer"
+            >
+              <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            </Link>
+
             {user ? (
               <div className="flex items-center gap-3 bg-white/5 border border-white/10 pl-1.5 pr-2 py-1.5 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.1)]">
                 <img 
