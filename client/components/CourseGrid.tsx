@@ -24,7 +24,7 @@ export default function CourseGrid({ courseType }: { courseType: "Free" | "Paid"
       apiParams.set('course_type', courseType);
       apiParams.set('page', pageNum.toString());
       
-      const res = await fetch(`http://localhost:5000/api/courses?${apiParams.toString()}`);
+      const res = await fetch(`/api/courses?${apiParams.toString()}`);
       const data = await res.json();
       
       if (res.ok && data.courses) {

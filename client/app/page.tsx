@@ -17,7 +17,7 @@ export default function HomePage() {
   const fetchCourses = useCallback(async (currentSearch: string, currentCategory: string) => {
     setLoading(true);
     try {
-      let baseUrl = `http://localhost:5000/api/courses?limit=6`;
+      let baseUrl = `/api/courses?limit=6`;
       if (currentSearch) baseUrl += `&search=${encodeURIComponent(currentSearch)}`;
       if (currentCategory !== "All") baseUrl += `&department=${encodeURIComponent(currentCategory)}`;
 
