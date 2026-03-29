@@ -107,7 +107,7 @@ export default function HomePage() {
         ) : (freeCourses.length === 0 && paidCourses.length === 0) ? (
           <div className="text-center py-32 border border-dashed border-neutral-800 rounded-3xl bg-neutral-900/30 backdrop-blur-sm">
             <Search className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-white mb-2">No matching curriculum</h3>
+            <h2 className="text-2xl font-bold text-white mb-2">No matching curriculum</h2>
             <p className="text-neutral-500 font-medium">Try adjusting your search query or selecting a different faculty department.</p>
             <button 
               onClick={() => { setSearch(""); setCategory("All"); }}

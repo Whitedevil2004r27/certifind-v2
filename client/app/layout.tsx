@@ -9,6 +9,16 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'CertiFind | Course Aggregator',
   description: 'Find the best paid and free courses from Coursera, Udemy, and more.',
+  manifest: '/manifest.json',
+  themeColor: '#7226FF',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  appleWebApp: {
+    title: 'CertiFind',
+    statusBarStyle: 'default',
+  },
+  icons: {
+    apple: '/icons/icon-512x512.png',
+  }
 }
 
 export default function RootLayout({

@@ -91,7 +91,7 @@ export default function CourseCard({ course }: { course: Course }) {
         <div className="absolute top-4 right-4 z-20">
           <span className="bg-black/70 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-full backdrop-blur-md flex items-center gap-1.5 shadow-lg border border-white/10">
             <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> 
-            {(course.rating || 0).toFixed(1)} <span className="text-neutral-400 font-normal">({(course.total_ratings || 0).toLocaleString()})</span>
+            {(course.rating || 0).toFixed(1)} <span className="text-neutral-200 font-normal">({(course.total_ratings || 0).toLocaleString()})</span>
           </span>
         </div>
         
@@ -110,7 +110,7 @@ export default function CourseCard({ course }: { course: Course }) {
           <span className="text-[11px] font-medium text-certifind-accent uppercase tracking-widest truncate max-w-[70%]">
             {course.department}
           </span>
-          <span className="flex items-center gap-1 text-[11px] text-neutral-400 font-semibold bg-white/5 px-2 py-0.5 rounded uppercase">
+          <span className="flex items-center gap-1 text-[11px] text-white/80 font-semibold bg-white/5 px-2 py-0.5 rounded uppercase">
             {course.level}
           </span>
         </div>
@@ -119,14 +119,14 @@ export default function CourseCard({ course }: { course: Course }) {
           {course.title}
         </h3>
         
-        <p className="text-neutral-400 text-sm mb-6 flex items-center gap-2">
+        <p className="text-white/60 text-sm mb-6 flex items-center gap-2">
           <Users className="w-4 h-4 opacity-50" /> {course.instructor_name}
         </p>
 
         {/* Metadata Segment */}
         <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between">
           <div className="flex flex-col">
-            <div className="flex items-center gap-1.5 text-neutral-500 text-xs mt-1">
+            <div className="flex items-center gap-1.5 text-white/50 text-xs mt-1">
               <Clock className="w-3.5 h-3.5" /> {course.duration_hours} total hours
             </div>
           </div>

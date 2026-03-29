@@ -25,11 +25,11 @@ export default function Footer() {
               <h3 className="text-2xl font-bold text-white tracking-wide">
                 Empowering professional growth through unified discovery.
               </h3>
-              <p className="text-neutral-400 text-base leading-relaxed">
+              <p className="text-white/70 text-base leading-relaxed">
                 The noise of online education has never been louder. With thousands of platforms offering disparate curricula, learners frequently struggle to identify reputable, high-impact certifications. 
-                <strong className="text-neutral-300"> The primary purpose of CertiFind </strong> is to eliminate this friction by acting as a highly curated, centralized aggregation hub. We meticulously organize and categorize the digital world's finest educational tracks into a single, seamless interface.
+                <strong className="text-white/80"> The primary purpose of CertiFind </strong> is to eliminate this friction by acting as a highly curated, centralized aggregation hub. We meticulously organize and categorize the digital world's finest educational tracks into a single, seamless interface.
               </p>
-              <p className="text-neutral-400 text-base leading-relaxed">
+              <p className="text-white/70 text-base leading-relaxed">
                 Whether you are an aspiring developer seeking foundational web frameworks, a business professional hunting for premier leadership courses, or a creative building out your design portfolio, CertiFind is built specifically to accelerate your career. By prioritizing quality over quantity, we ensure that every course indexed on our platform meets the highest standards of professional rigor.
               </p>
             </div>
@@ -64,25 +64,25 @@ export default function Footer() {
         {/* Bottom Footer Credits */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-white/5">
           <div className="flex gap-6 items-center flex-wrap">
-            <Link href="/free-courses" className="text-neutral-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
+            <Link href="/free-courses" className="text-white/60 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Free Tier
             </Link>
-            <Link href="/paid-courses" className="text-neutral-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
+            <Link href="/paid-courses" className="text-white/60 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Premium
             </Link>
-            <Link href="/bookmarks" className="text-neutral-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
+            <Link href="/bookmarks" className="text-white/60 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Bookmarks
             </Link>
-            <Link href="/admin" className="text-neutral-500 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
+            <Link href="/admin" className="text-white/60 hover:text-white transition-colors text-sm font-bold flex items-center gap-2">
               <ShieldCheck className="w-3.5 h-3.5" /> Admin
             </Link>
           </div>
-
+ 
           <div className="md:text-right flex flex-col items-start md:items-end gap-1">
-            <p className="text-neutral-500 text-sm">
+            <p className="text-white/50 text-sm">
               © {new Date().getFullYear()} CertiFind. Open Source Education.
             </p>
-            <div className="flex text-neutral-500 text-sm gap-2">
+            <div className="flex text-white/50 text-sm gap-2">
               <span>Powered by</span>
               <span className="font-black text-white tracking-widest bg-gradient-to-r from-blue-400 to-emerald-400 text-transparent bg-clip-text">RAVIKUMAR</span>
             </div>

@@ -1,0 +1,23 @@
+{
+  "name": "CertiFind | Course Aggregator",
+  "short_name": "CertiFind",
+  "description": "Discover the internet's greatest courses from top platforms.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#010030",
+  "theme_color": "#7226FF",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

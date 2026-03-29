@@ -43,11 +43,11 @@ export default function Navbar() {
             </Link>
             
             <div className="hidden md:flex items-center space-x-1">
-              <Link href="/" className="text-neutral-400 hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-white/5">Home</Link>
-              <Link href="/free-courses" className="text-neutral-400 hover:text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-emerald-500/10">Free Courses</Link>
-              <Link href="/paid-courses" className="text-neutral-400 hover:text-amber-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-amber-500/10">Paid Courses</Link>
+              <Link href="/" className="text-white/70 hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-white/5">Home</Link>
+              <Link href="/free-courses" className="text-white/70 hover:text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-emerald-500/10">Free Courses</Link>
+              <Link href="/paid-courses" className="text-white/70 hover:text-amber-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-amber-500/10">Paid Courses</Link>
               {user && (
-                <Link href="/bookmarks" className="text-neutral-400 hover:text-rose-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-rose-500/10">Bookmarks</Link>
+                <Link href="/bookmarks" className="text-white/70 hover:text-rose-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-rose-500/10">Bookmarks</Link>
               )}
             </div>
           </div>
