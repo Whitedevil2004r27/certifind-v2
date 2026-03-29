@@ -1,4 +1,5 @@
 import { ExternalLink, Star } from "lucide-react";
+import BookmarkButton from "./BookmarkButton";
 
 export interface Course {
   id: string;
@@ -39,6 +40,7 @@ export default function CourseCard({ course }: { course: Course }) {
             <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> {course.rating.toFixed(1)}
           </span>
         </div>
+        <BookmarkButton courseId={course.id} />
       </div>
       
       <div className="p-6 flex flex-col flex-grow relative">

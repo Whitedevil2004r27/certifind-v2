@@ -46,24 +46,25 @@ export default function Navbar() {
               <Link href="/" className="text-neutral-400 hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-white/5">Home</Link>
               <Link href="/free" className="text-neutral-400 hover:text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-emerald-500/10">Free Courses</Link>
               <Link href="/paid" className="text-neutral-400 hover:text-amber-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-amber-500/10">Paid Courses</Link>
+              {user && (
+                <Link href="/bookmarks" className="text-neutral-400 hover:text-rose-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-rose-500/10">Bookmarks</Link>
+              )}
             </div>
           </div>
 
           <div className="flex items-center flex-shrink-0 gap-4">
             {user ? (
-              <div className="flex items-center gap-4 bg-white/5 border border-white/10 pl-2 pr-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.1)]">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 pl-1.5 pr-1.5 py-1.5 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.1)]">
                 <img 
                   src={user.user_metadata?.avatar_url || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} 
                   alt="Avatar" 
-                  className="w-8 h-8 rounded-full border border-white/20"
+                  className="w-9 h-9 rounded-full border border-white/20 object-cover"
+                  title={user.email}
                 />
-                <span className="text-sm font-bold text-white hidden sm:block">
-                  {user.user_metadata?.full_name?.split(' ')[0] || user.email}
-                </span>
                 <button 
                   onClick={handleLogout}
-                  className="ml-2 text-neutral-400 hover:text-red-400 transition-colors bg-black/40 p-1.5 rounded-full"
-                  title="Log out"
+                  className="text-neutral-400 hover:text-rose-400 transition-colors bg-black/40 hover:bg-rose-500/10 p-2 rounded-full"
+                  title="Sign out"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
