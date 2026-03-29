@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Sparkles } from 'lucide-react';
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -46,6 +46,9 @@ export default function Navbar() {
               <Link href="/" className="text-white/70 hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-white/5">Home</Link>
               <Link href="/free-courses" className="text-white/70 hover:text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-emerald-500/10">Free Courses</Link>
               <Link href="/paid-courses" className="text-white/70 hover:text-amber-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-amber-500/10">Paid Courses</Link>
+              <Link href="/analyzer" className="text-white/70 hover:text-blue-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-blue-500/10 flex items-center gap-1.5 group/nav">
+                AI Analyzer <Sparkles className="w-3.5 h-3.5 text-blue-400 group-hover/nav:animate-pulse" />
+              </Link>
               {user && (
                 <Link href="/bookmarks" className="text-white/70 hover:text-rose-400 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-rose-500/10">Bookmarks</Link>
               )}

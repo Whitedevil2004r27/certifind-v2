@@ -12,11 +12,13 @@
     "@supabase/supabase-js": "^2.100.1",
     "lucide-react": "^0.354.0",
     "next": "15.0.0-rc.0",
+    "pdf-parse": "^2.4.5",
     "react": "19.0.0-rc.0",
     "react-dom": "19.0.0-rc.0"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.19",
