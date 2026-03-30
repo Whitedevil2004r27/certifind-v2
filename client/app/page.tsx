@@ -133,7 +133,7 @@ export default function HomePage() {
                   <Link href="/free-courses" className="text-emerald-500 font-bold hover:text-emerald-400 transition-colors uppercase tracking-widest text-xs self-start sm:self-auto">View All →</Link>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {freeCourses.map((course, idx) => (
                     <div key={course.course_id} className="animate-fade-in-up" style={{ animationDelay: `${(idx % 9) * 100}ms` }}>
                       <CourseCard course={course} />
@@ -156,7 +156,7 @@ export default function HomePage() {
                   <Link href="/paid-courses" className="text-amber-500 font-bold hover:text-amber-400 transition-colors uppercase tracking-widest text-xs self-start sm:self-auto">Explore Premium →</Link>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {paidCourses.map((course, idx) => (
                     <div key={course.course_id} className="animate-fade-in-up" style={{ animationDelay: `${(idx % 9) * 100}ms` }}>
                       <CourseCard course={course} />
