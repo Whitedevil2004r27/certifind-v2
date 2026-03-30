@@ -6,12 +6,17 @@ import Footer from '@/components/Footer'
 
 const inter = Inter({ subsets: ['latin'] })
 
+export const viewport = {
+  themeColor: '#7226FF',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
   title: 'CertiFind | Course Aggregator',
   description: 'Find the best paid and free courses from Coursera, Udemy, and more.',
   manifest: '/manifest.json',
-  themeColor: '#7226FF',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   appleWebApp: {
     title: 'CertiFind',
     statusBarStyle: 'default',
