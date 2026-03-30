@@ -83,13 +83,34 @@ export default function AdminPage() {
 
   // Security Check: Lock out non-admins
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+  if (!adminEmail) {
+    return (
+      <div className="flex flex-col min-h-[70vh] items-center justify-center text-center px-4 gap-4">
+        <ShieldCheck className="w-16 h-16 text-amber-400 mb-2" />
+        <h1 className="text-3xl font-black text-white">Admin Not Configured</h1>
+        <p className="text-neutral-400 max-w-md text-base">
+          Add the following to your <code className="bg-black border border-white/10 px-2 py-0.5 rounded text-sm text-blue-400">.env.local</code> file (and in Vercel environment variables):
+        </p>
+        <div className="bg-neutral-900 border border-white/10 rounded-xl px-6 py-4 text-left font-mono text-sm text-emerald-400 w-full max-w-md">
+          NEXT_PUBLIC_ADMIN_EMAIL=<span className="text-white">{user?.email ?? 'your-admin@gmail.com'}</span>
+        </div>
+        <p className="text-neutral-500 text-sm">
+          {user ? <>Your current signed-in email is <strong className="text-white">{user.email}</strong></> : 'Sign in first, then add your email above.'}
+        </p>
+      </div>
+    );
+  }
+
   if (!user || user.email !== adminEmail) {
     return (
-      <div className="flex flex-col min-h-[70vh] items-center justify-center text-center px-4">
-        <ShieldCheck className="w-20 h-20 text-rose-500 mb-6 drop-shadow-lg" />
-        <h1 className="text-4xl font-black text-white mb-4">Unauthorized Access</h1>
-        <p className="text-lg text-neutral-400 max-w-md">
-          This area is restricted to administrators. Please ensure you are logged in with the correct email, and that <code className="bg-black border border-white/10 px-2 py-1 rounded text-sm text-blue-400">NEXT_PUBLIC_ADMIN_EMAIL</code> is configured in <code className="bg-black border border-white/10 px-2 py-1 rounded text-sm text-blue-400">.env.local</code>.
+      <div className="flex flex-col min-h-[70vh] items-center justify-center text-center px-4 gap-4">
+        <ShieldCheck className="w-16 h-16 text-rose-500 mb-2" />
+        <h1 className="text-3xl font-black text-white">Access Denied</h1>
+        <p className="text-neutral-400 max-w-md text-base">
+          This panel is restricted to the site administrator.
+          {user && <> You are signed in as <strong className="text-white">{user.email}</strong>, which is not the admin account.</>}
+          {!user && <> Please sign in with the admin Google account.</>}
         </p>
       </div>
     );
