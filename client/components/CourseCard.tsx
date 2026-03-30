@@ -47,7 +47,13 @@ export default function CourseCard({ course }: { course: Course }) {
     : course.thumbnail_url;
 
   return (
-    <div className="group flex flex-col bg-neutral-900 border border-white/8 rounded-xl overflow-hidden hover:border-certifind-accent/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_-8px_rgba(114,38,255,0.35)]">
+    <a
+      href={course.course_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`View course: ${course.title}`}
+      className="group flex flex-col bg-neutral-900 border border-white/8 rounded-xl overflow-hidden hover:border-certifind-accent/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_-8px_rgba(114,38,255,0.35)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-certifind-accent focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950"
+    >
       
       {/* Thumbnail */}
       <div className="relative h-36 w-full overflow-hidden flex-shrink-0">
@@ -79,7 +85,6 @@ export default function CourseCard({ course }: { course: Course }) {
             {(course.rating || 0).toFixed(1)}
           </span>
         </div>
-        {/* Platform pill */}
         <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-neutral-900 to-transparent" />
       </div>
 
@@ -108,21 +113,20 @@ export default function CourseCard({ course }: { course: Course }) {
           </span>
         </div>
 
-        {/* Enroll CTA */}
-        <a
-          href={course.course_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-1 w-full bg-certifind-accent/10 hover:bg-certifind-accent text-certifind-accent hover:text-white border border-certifind-accent/30 hover:border-certifind-accent font-bold py-2 rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 text-xs"
-        >
-          Enroll <ExternalLink className="w-3 h-3" />
-        </a>
+        {/* Enroll CTA — visual indicator only, card itself is the link */}
+        <div className="mt-1 w-full bg-certifind-accent/10 group-hover:bg-certifind-accent text-certifind-accent group-hover:text-white border border-certifind-accent/30 group-hover:border-certifind-accent font-bold py-2 rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 text-xs">
+          Enroll Now <ExternalLink className="w-3 h-3" />
+        </div>
 
-        {/* Bookmark absolute */}
-        <div className="absolute top-3 right-3">
+        {/* Bookmark — stops card click from propagating */}
+        <div
+          className="absolute top-3 right-3"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
           <BookmarkButton courseId={course.course_id} />
         </div>
       </div>
-    </div>
+    </a>
   );
 }
