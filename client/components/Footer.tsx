@@ -78,7 +78,7 @@ export default function Footer() {
             </Link>
           </div>
  
-          <div className="md:text-right flex flex-col items-start md:items-end gap-1">
+          <div className="md:text-right flex flex-col items-center md:items-end gap-1">
             <p className="text-white/50 text-sm">
               © {new Date().getFullYear()} CertiFind. Open Source Education.
             </p>

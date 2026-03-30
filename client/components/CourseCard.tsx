@@ -58,7 +58,7 @@ export default function CourseCard({ course }: { course: Course }) {
     <div className="group flex flex-col h-full bg-certifind-bg/90 backdrop-blur-2xl border border-certifind-accent/30 rounded-2xl overflow-hidden hover:border-certifind-accent transition-all duration-500 hover:-translate-y-2 shadow-lg hover:shadow-[0_15px_40px_-10px_rgba(114,38,255,0.4)]">
       
       {/* Thumbnail Section */}
-      <div className="relative h-[220px] w-full overflow-hidden bg-black p-2 pb-0">
+      <div className="relative h-44 sm:h-[220px] w-full overflow-hidden bg-black p-2 pb-0">
         <img 
           src={getValidImageUrl(course.thumbnail_url)} 
           alt={course.title}

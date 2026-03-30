@@ -84,19 +84,19 @@ export default function AnalyzerPage() {
   };
 
   return (
-    <div className="min-h-screen max-w-[1400px] mx-auto px-6 py-12 lg:py-20 relative">
+    <div className="min-h-screen max-w-[1400px] mx-auto px-4 sm:px-6 py-10 lg:py-20 relative">
       {/* Background Decor */}
       <div className="absolute top-0 inset-x-0 h-[500px] bg-certifind-accent/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <div className="inline-flex items-center gap-2 bg-certifind-accent/10 text-certifind-accent px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase mb-6 border border-certifind-accent/20">
             <Sparkles className="w-3.5 h-3.5" /> AI Career Hub
           </div>
-          <h1 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-6xl font-black text-white mb-4 sm:mb-6 tracking-tight">
             {result ? "Your Growth Strategy" : "Elite Resume Analyzer"}
           </h1>
-          <p className="text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed">
             {result 
               ? "We've mapped your competencies and built an upgraded resume template for you." 
               : "Upload your resume to identify skill gaps and instantly generate an ATS-optimized AI resume."
@@ -105,7 +105,7 @@ export default function AnalyzerPage() {
         </div>
 
         {!result ? (
-          <div className="bg-neutral-900/40 border border-white/5 backdrop-blur-3xl rounded-[2.5rem] p-8 md:p-16 shadow-2xl relative overflow-hidden group">
+          <div className="bg-neutral-900/40 border border-white/5 backdrop-blur-3xl rounded-[2rem] p-5 sm:p-8 md:p-16 shadow-2xl relative overflow-hidden group">
             <form onSubmit={handleUpload} className="space-y-10">
               <div 
                 className={`border-2 border-dashed rounded-[2rem] p-12 text-center transition-all duration-500 cursor-pointer flex flex-col items-center gap-6 ${
@@ -145,35 +145,37 @@ export default function AnalyzerPage() {
           </div>
         ) : (
           <div className="space-y-12 animate-fade-in relative">
-            {/* Quick Actions Tray */}
-            <div className="flex flex-wrap gap-4 justify-center mb-12">
+            {/* Quick Actions Tray - stacks vertically on mobile */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-10 sm:mb-12">
               <button 
                 onClick={() => setShowPreview(true)}
-                className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 transition-all border border-white/10 group"
+                className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-black flex items-center justify-center gap-3 transition-all border border-white/10 group"
               >
                 <Eye className="w-5 h-5 text-certifind-accent group-hover:scale-110" /> Preview AI Resume
               </button>
               <button 
                 onClick={handleExport}
                 disabled={exporting}
-                className="bg-certifind-accent hover:bg-certifind-accent/80 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-3 transition-all shadow-xl disabled:opacity-50"
+                className="w-full sm:w-auto bg-certifind-accent hover:bg-certifind-accent/80 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-xl disabled:opacity-50"
               >
                 {exporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />} 
                 One-Click Export
               </button>
             </div>
 
-            {/* Resume Preview Modal Overlay */}
+            {/* Resume Preview Modal - Properly scrollable on mobile */}
             {showPreview && (
-              <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4 md:p-10 animate-in fade-in zoom-in duration-300">
-                <div className="relative max-w-4xl w-full">
-                  <button 
-                    onClick={() => setShowPreview(false)}
-                    className="absolute -top-4 -right-4 md:-right-12 bg-white text-black p-3 rounded-full hover:bg-gray-200 transition-colors z-50 shadow-2xl"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                  <div className="transform origin-top scale-[0.6] md:scale-100">
+              <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 md:p-10">
+                <div className="relative max-w-4xl w-full mx-auto">
+                  <div className="flex justify-end mb-3">
+                    <button 
+                      onClick={() => setShowPreview(false)}
+                      className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full font-black text-sm hover:bg-gray-200 transition-colors shadow-2xl"
+                    >
+                      <X className="w-4 h-4" /> Close
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
                     <ResumeTemplate data={resumeData} />
                   </div>
                 </div>
