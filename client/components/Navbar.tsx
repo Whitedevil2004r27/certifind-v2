@@ -7,18 +7,35 @@ import { LogOut, User, Sparkles } from 'lucide-react';
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for existing session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
+    // Listen for auth state changes (login/logout/token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const getAvatarUrl = (user: any) => {
+    // Robust fallback chain for Google OAuth avatar
+    return (
+      user?.user_metadata?.avatar_url ||
+      user?.user_metadata?.picture ||
+      user?.user_metadata?.photo ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+        user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || 'U'
+      )}&backgroundType=gradientLinear&fontSize=40`
+    );
+  };
 
   const handleLogin = async () => {
     await supabase.auth.signInWithOAuth({
@@ -29,6 +46,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    setUser(null);
   };
 
   return (
@@ -73,14 +91,18 @@ export default function Navbar() {
               <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />
             </Link>
 
-            {user ? (
+            {/* Auth Section: hidden while session is resolving to prevent flash */}
+            {loading ? (
+              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 animate-pulse" />
+            ) : user ? (
               <div className="flex items-center gap-3 bg-white/5 border border-white/10 pl-1.5 pr-2 py-1.5 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.1)] hover:border-certifind-accent/40 transition-all group/profile">
                 <div className="relative">
                   <div className="absolute -inset-1 bg-certifind-accent/30 rounded-full blur-sm opacity-0 group-hover/profile:opacity-100 transition-opacity" />
                   <img 
-                    src={user.user_metadata?.avatar_url || user.user_metadata?.picture || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + user.email} 
+                    src={getAvatarUrl(user)}
                     alt="User Avatar" 
                     className="relative w-10 h-10 rounded-full border-2 border-white/10 group-hover/profile:border-certifind-accent/50 transition-colors object-cover"
+                    referrerPolicy="no-referrer"
                   />
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#0a0a0a] rounded-full" />
                 </div>
@@ -89,11 +111,9 @@ export default function Navbar() {
                   <span className="text-white text-sm font-black tracking-tight leading-none mb-1">
                     {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "Scholar"}
                   </span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-certifind-accent text-[8px] uppercase font-black tracking-[0.1em]">
-                      Elite Member
-                    </span>
-                  </div>
+                  <span className="text-certifind-accent text-[8px] uppercase font-black tracking-[0.1em]">
+                    Elite Member
+                  </span>
                 </div>
 
                 <div className="w-px h-6 bg-white/10 mx-1" />
@@ -103,7 +123,7 @@ export default function Navbar() {
                   className="text-neutral-500 hover:text-rose-400 transition-all hover:bg-rose-500/10 p-2 rounded-full"
                   title="Sign out"
                 >
-                  <LogOut className="w-4.5 h-4.5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
@@ -112,7 +132,7 @@ export default function Navbar() {
                 className="group relative flex items-center gap-2 bg-white text-black font-black px-8 py-3 rounded-full transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 opacity-0 group-hover:opacity-10 transition-opacity" />
-                <User className="w-4.5 h-4.5 text-blue-600" />
+                <User className="w-4 h-4 text-blue-600" />
                 Sign In
               </button>
             )}
