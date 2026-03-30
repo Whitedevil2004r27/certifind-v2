@@ -81,10 +81,13 @@ export default function AdminPage() {
     );
   }
 
-  // Security Check: Lock out non-admins
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  // Security Check: Support multiple comma-separated admin emails
+  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "")
+    .split(",")
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
 
-  if (!adminEmail) {
+  if (adminEmails.length === 0) {
     return (
       <div className="flex flex-col min-h-[70vh] items-center justify-center text-center px-4 gap-4">
         <ShieldCheck className="w-16 h-16 text-amber-400 mb-2" />
@@ -102,7 +105,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || user.email !== adminEmail) {
+  if (!user || !adminEmails.includes(user.email?.toLowerCase())) {
     return (
       <div className="flex flex-col min-h-[70vh] items-center justify-center text-center px-4 gap-4">
         <ShieldCheck className="w-16 h-16 text-rose-500 mb-2" />
