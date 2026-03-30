@@ -36,7 +36,15 @@ export default function Navbar() {
       <div className="max-w-[1400px] mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center gap-12">
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link href="/" className="flex items-center gap-4 group">
+              <div className="relative group/logo">
+                <div className="absolute -inset-1.5 bg-blue-500/20 rounded-full blur-md group-hover/logo:bg-blue-500/40 transition-all duration-500" />
+                <img 
+                  src="/favicon.png" 
+                  alt="CertiFind Logo" 
+                  className="relative w-10 h-10 rounded-full border border-white/20 shadow-[0_0_15px_rgba(59,130,246,0.2)] group-hover/logo:scale-110 transition-transform duration-500" 
+                />
+              </div>
               <span className="text-3xl font-black tracking-tighter text-white group-hover:drop-shadow-[0_0_10px_rgba(59,130,246,0.8)] transition-all">
                 Certi<span className="text-blue-500">Find</span>
               </span>
