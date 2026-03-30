@@ -16,18 +16,21 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const uint8Array = new Uint8Array(bytes);
     
-    // Extract text from PDF using the serverless-optimized unpdf engine
-    let extracted;
-    try {
-      extracted = await extractText(uint8Array);
-    } catch (parseError: any) {
-      console.error('unpdf Parse Internal Error:', parseError.message, parseError.stack);
-      return NextResponse.json({ 
-        error: 'PDF parsing failed on server', 
-        details: parseError.message 
-      }, { status: 422 });
-    }
+    // Performance Optimization: Run PDF Parsing and Database Fetching in Parallel
+    const [extracted, { data: courses, error: dbError }] = await Promise.all([
+      extractText(uint8Array).catch(err => {
+        console.error('unpdf Parse Internal Error:', err.message);
+        return null;
+      }),
+      supabase
+        .from('courses')
+        .select('course_id, title, department, tags, rating')
+    ]);
     
+    if (dbError || !courses) {
+      throw dbError || new Error('No courses found in database');
+    }
+
     if (!extracted || !extracted.text) {
       throw new Error('No text extracted from PDF. The file may be empty or encrypted.');
     }
@@ -36,33 +39,24 @@ export async function POST(request: Request) {
     const rawText = Array.isArray(extracted.text) ? extracted.text.join(' ') : extracted.text;
     const resumeText = rawText.toLowerCase();
 
-    // 1. Fetch all unique departments and tags from the database to create a skill map
-    const { data: courses, error } = await supabase
-      .from('courses')
-      .select('course_id, title, department, tags, rating, thumbnail_url');
-
-    if (error || !courses) {
-      throw error || new Error('No courses found in database');
-    }
-
-    // 2. Identify skills present in resume
+    // 1. Identify skills present in resume (O(n) skills in DB)
     const ALL_SKILLS = Array.from(new Set(courses.flatMap(c => [
       (c.department || "").toLowerCase(),
       ...(c.tags || []).map((t: string) => (t || "").toLowerCase())
     ])));
 
-    const matchedSkills = ALL_SKILLS.filter(skill => skill && resumeText.includes(skill.toLowerCase()));
+    const matchedSkillsList = ALL_SKILLS.filter(skill => skill && resumeText.includes(skill.toLowerCase()));
+    const matchedSkillsSet = new Set(matchedSkillsList);
 
-    // 3. Simple Scoring Algorithm: "Resume Gap"
-    // Calculate which courses offer the most value based on skills NOT in the resume
+    // 2. Optimized Scoring Algorithm (O(n) courses)
     const recommendations = courses.map(course => {
       const courseSkills = [
-        course.department.toLowerCase(),
-        ...(course.tags || []).map((t: string) => t.toLowerCase())
+        (course.department || "").toLowerCase(),
+        ...(course.tags || []).map((t: string) => (t || "").toLowerCase())
       ];
       
-      const newSkillsCount = courseSkills.filter(s => !matchedSkills.includes(s)).length;
-      const matchScore = courseSkills.filter(s => matchedSkills.includes(s)).length;
+      const newSkillsCount = courseSkills.filter(s => !matchedSkillsSet.has(s)).length;
+      const matchScore = courseSkills.filter(s => matchedSkillsSet.has(s)).length;
       
       return {
         ...course,
@@ -76,9 +70,9 @@ export async function POST(request: Request) {
     .slice(0, 3); // Top 3 recommendations
 
     return NextResponse.json({
-      detectedSkills: matchedSkills.slice(0, 10), // Limit for UI
+      detectedSkills: matchedSkillsList.slice(0, 10), // Limit for UI
       recommendations,
-      summary: `We analyzed your profile and found ${matchedSkills.length} core competencies. Based on current industry demand in our database, we identified ${recommendations.length} key growth areas.`
+      summary: `We analyzed your profile and found ${matchedSkillsList.length} core competencies. Based on current industry demand in our database, we identified ${recommendations.length} key growth areas.`
     });
 
   } catch (err: any) {
