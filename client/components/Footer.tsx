@@ -42,7 +42,6 @@ export default function Footer() {
             <h4 className="text-white font-bold tracking-widest uppercase text-xs mb-1">Company</h4>
             <Link href="/about" className="text-neutral-400 hover:text-white transition-colors text-sm">About</Link>
             <Link href="/contact" className="text-neutral-400 hover:text-white transition-colors text-sm">Contact</Link>
-            <Link href="/blog" className="text-neutral-400 hover:text-white transition-colors text-sm">Blog</Link>
             <Link href="/support" className="text-neutral-400 hover:text-white transition-colors text-sm">Support</Link>
             <Link href="/admin" className="text-neutral-400 hover:text-white transition-colors text-sm">Admin</Link>
           </div>
