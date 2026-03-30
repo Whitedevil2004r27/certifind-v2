@@ -74,35 +74,45 @@ export default function Navbar() {
             </Link>
 
             {user ? (
-              <div className="flex items-center gap-3 bg-white/5 border border-white/10 pl-1.5 pr-2 py-1.5 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.1)]">
-                <img 
-                  src={user.user_metadata?.avatar_url || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"} 
-                  alt="Avatar" 
-                  className="w-9 h-9 rounded-full border border-white/20 object-cover"
-                />
-                
-                <div className="flex flex-col">
-                  <span className="text-white text-sm font-bold truncate max-w-[120px]">
-                    {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "Student"}
-                  </span>
-                  <span className="text-certifind-accent text-[10px] uppercase font-black tracking-widest leading-none mt-0.5">
-                    Verified
-                  </span>
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 pl-1.5 pr-2 py-1.5 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.1)] hover:border-certifind-accent/40 transition-all group/profile">
+                <div className="relative">
+                  <div className="absolute -inset-1 bg-certifind-accent/30 rounded-full blur-sm opacity-0 group-hover/profile:opacity-100 transition-opacity" />
+                  <img 
+                    src={user.user_metadata?.avatar_url || user.user_metadata?.picture || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + user.email} 
+                    alt="User Avatar" 
+                    className="relative w-10 h-10 rounded-full border-2 border-white/10 group-hover/profile:border-certifind-accent/50 transition-colors object-cover"
+                  />
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#0a0a0a] rounded-full" />
                 </div>
+                
+                <div className="flex flex-col pr-1">
+                  <span className="text-white text-sm font-black tracking-tight leading-none mb-1">
+                    {user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "Scholar"}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-certifind-accent text-[8px] uppercase font-black tracking-[0.1em]">
+                      Elite Member
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-px h-6 bg-white/10 mx-1" />
+
                 <button 
                   onClick={handleLogout}
-                  className="text-neutral-400 hover:text-rose-400 transition-colors bg-black/40 hover:bg-rose-500/10 p-2 rounded-full ml-1"
+                  className="text-neutral-500 hover:text-rose-400 transition-all hover:bg-rose-500/10 p-2 rounded-full"
                   title="Sign out"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4.5 h-4.5" />
                 </button>
               </div>
             ) : (
               <button 
                 onClick={handleLogin}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:-translate-y-0.5 border border-blue-400/30"
+                className="group relative flex items-center gap-2 bg-white text-black font-black px-8 py-3 rounded-full transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:-translate-y-0.5 overflow-hidden"
               >
-                <User className="w-4 h-4" />
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 opacity-0 group-hover:opacity-10 transition-opacity" />
+                <User className="w-4.5 h-4.5 text-blue-600" />
                 Sign In
               </button>
             )}
