@@ -96,9 +96,12 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
   ))
 
   return (
-    <div className="group flex flex-col bg-certifind-bg/40 border border-white/5 rounded-3xl overflow-hidden hover:border-certifind-accent/40 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(114,38,255,0.1)] h-full backdrop-blur-sm relative">
+    <div 
+      onClick={() => router.push(`/courses/${course.course_id}`)}
+      className="group flex flex-col bg-certifind-bg/40 border border-white/5 rounded-3xl overflow-hidden hover:border-certifind-accent/40 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(114,38,255,0.1)] h-full backdrop-blur-sm relative cursor-pointer active:scale-[0.98]"
+    >
       {/* Thumbnail Area */}
-      <Link href={`/courses/${course.course_id}`} className="relative aspect-video overflow-hidden cursor-pointer block">
+      <div className="relative aspect-video overflow-hidden block">
         <img
           src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop'}
           alt={course.title}
@@ -134,7 +137,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
         <div className="absolute bottom-4 left-4">
           <PlatformBadge name={course.platform} category={course.platforms?.category || 'Global'} />
         </div>
-      </Link>
+      </div>
 
       {/* Content Area */}
       <div className="p-6 flex flex-col flex-grow">
@@ -145,11 +148,9 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
           <span className="text-xs font-bold text-amber-400/80">({course.total_ratings.toLocaleString()})</span>
         </div>
 
-        <Link href={`/courses/${course.course_id}`}>
-          <h3 className="text-lg font-bold text-white line-clamp-2 mb-2 group-hover:text-certifind-accent transition-colors leading-tight min-h-[44px] cursor-pointer">
-            {course.title}
-          </h3>
-        </Link>
+        <h3 className="text-lg font-bold text-white line-clamp-2 mb-2 group-hover:text-certifind-accent transition-colors leading-tight min-h-[44px]">
+          {course.title}
+        </h3>
 
         <p className="text-sm text-neutral-400 mb-4">{course.instructor_name}</p>
 
@@ -195,7 +196,8 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
             href={course.course_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-5 py-2.5 bg-certifind-accent text-white text-sm font-bold rounded-xl hover:bg-certifind-accent/80 transition-all shadow-lg shadow-certifind-accent/20"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-2 px-5 py-2.5 bg-certifind-accent text-white text-sm font-bold rounded-xl hover:bg-certifind-accent/80 transition-all shadow-lg shadow-certifind-accent/20 z-10"
           >
             <span>Learn</span>
             <ExternalLink size={14} />
