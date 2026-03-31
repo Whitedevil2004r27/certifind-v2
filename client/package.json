@@ -9,14 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.100.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.354.0",
     "next": "^15.2.4",
+    "next-recaptcha-v3": "^1.5.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "unpdf": "^1.4.0"
+    "react-hook-form": "^7.72.0",
+    "unpdf": "^1.4.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^20",
