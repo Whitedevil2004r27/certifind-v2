@@ -1,3 +1,4 @@
+'use client';
 import { supabase } from '@/lib/supabase';
 
 interface Props {
@@ -6,18 +7,20 @@ interface Props {
   redirectTo?: string;
 }
 
-export default function SocialAuthButtons({ redirectTo = window?.location?.origin + '/auth/callback' }: Props) {
+export default function SocialAuthButtons({ redirectTo }: Props) {
   const handleGoogle = async () => {
+    const defaultRedirect = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '';
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: { redirectTo: redirectTo || defaultRedirect },
     });
   };
 
   const handleGithub = async () => {
+    const defaultRedirect = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '';
     await supabase.auth.signInWithOAuth({
       provider: 'github',
-      options: { redirectTo },
+      options: { redirectTo: redirectTo || defaultRedirect },
     });
   };
 
