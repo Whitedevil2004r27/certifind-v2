@@ -1,132 +1,145 @@
-import { ExternalLink, Star, Clock, Award, Bookmark } from "lucide-react";
-import BookmarkButton from "./BookmarkButton";
+import React from 'react'
+import { Star, Clock, BarChart, Bookmark, ExternalLink, Trophy } from 'lucide-react'
+import PlatformBadge from './PlatformBadge'
 
 export interface Course {
-  course_id: string;
-  title: string;
-  instructor_name: string;
-  platform: string;
-  department: string;
-  course_type: string;
-  price: number;
-  original_price: number | null;
-  discount_percentage: number;
-  rating: number;
-  total_ratings: number;
-  duration_hours: number;
-  level: string;
-  language: string;
-  thumbnail_url: string;
-  course_url: string;
-  tags: string[];
-  is_bestseller: boolean;
-  is_new: boolean;
-  certificate_offered: boolean;
+  course_id: string
+  title: string
+  instructor_name: string
+  platform: string
+  platforms?: {
+    category: string
+  }
+  department: string
+  course_type: string
+  price: number
+  original_price?: number
+  discount_percentage?: number
+  rating: number
+  total_ratings: number
+  duration_hours?: number
+  level: string
+  thumbnail_url?: string
+  course_url: string
+  certificate_offered?: boolean
+  is_bestseller?: boolean
+  is_new?: boolean
 }
 
-export default function CourseCard({ course }: { course: Course }) {
-  const getContextKeyword = () => {
-    const text = (course.department + " " + course.title).toLowerCase();
-    if (text.includes("data") || text.includes("machine learning") || text.includes("ai")) return "data,technology";
-    if (text.includes("web") || text.includes("software") || text.includes("react")) return "programming,code";
-    if (text.includes("cloud") || text.includes("aws") || text.includes("devops")) return "server,technology";
-    if (text.includes("cyber") || text.includes("security") || text.includes("hack")) return "cybersecurity,hacker";
-    if (text.includes("agri") || text.includes("hydroponic")) return "agriculture,farm";
-    if (text.includes("pharm") || text.includes("clinical")) return "medical,laboratory";
-    return "education,university";
-  };
+interface CourseCardProps {
+  course: Course
+}
 
-  const getHashLock = () => {
-    let h = 0;
-    for (let i = 0; i < course.course_id.length; i++) h = course.course_id.charCodeAt(i) + ((h << 5) - h);
-    return Math.abs(h);
-  };
-
-  const imgSrc = (!course.thumbnail_url || course.thumbnail_url.includes('source.unsplash.com'))
-    ? `https://loremflickr.com/400/220/${getContextKeyword()}?lock=${getHashLock()}`
-    : course.thumbnail_url;
+const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
+  const ratingStars = Array.from({ length: 5 }, (_, i) => (
+    <Star
+      key={i}
+      size={14}
+      className={i < Math.floor(course.rating) ? 'fill-amber-400 text-amber-400' : 'text-neutral-600'}
+    />
+  ))
 
   return (
-    <a
-      href={course.course_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`View course: ${course.title}`}
-      className="group flex flex-col bg-neutral-900 border border-white/8 rounded-xl overflow-hidden hover:border-certifind-accent/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_-8px_rgba(114,38,255,0.35)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-certifind-accent focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950"
-    >
-      
-      {/* Thumbnail */}
-      <div className="relative h-36 w-full overflow-hidden flex-shrink-0">
+    <div className="group flex flex-col bg-certifind-bg/40 border border-white/5 rounded-3xl overflow-hidden hover:border-certifind-accent/40 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(114,38,255,0.1)] h-full backdrop-blur-sm">
+      {/* Thumbnail Area */}
+      <div className="relative aspect-video overflow-hidden">
         <img
-          src={imgSrc}
+          src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop'}
           alt={course.title}
-          loading="lazy"
-          onError={(e) => { e.currentTarget.src = `https://loremflickr.com/400/220/${getContextKeyword()}?random=${getHashLock()}`; }}
-          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 ease-out"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
-        {/* Overlay badges */}
-        <div className="absolute top-2 left-2 flex gap-1.5">
-          {course.course_type === 'Free' && (
-            <span className="bg-certifind-accent text-white text-[10px] font-black px-2 py-0.5 rounded-full">FREE</span>
-          )}
+        
+        {/* Badges Overlay */}
+        <div className="absolute top-4 left-4 flex flex-col gap-2">
           {course.is_bestseller && (
-            <span className="bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5">
-              <Award className="w-2.5 h-2.5" /> Best
+            <span className="bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 rounded shadow-lg uppercase tracking-tight">
+              Bestseller
             </span>
           )}
           {course.is_new && (
-            <span className="bg-sky-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">NEW</span>
+            <span className="bg-certifind-accent text-white text-[10px] font-black px-2 py-0.5 rounded shadow-lg uppercase tracking-tight">
+              New
+            </span>
           )}
         </div>
-        {/* Rating */}
-        <div className="absolute top-2 right-2">
-          <span className="bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1 border border-white/10">
-            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-            {(course.rating || 0).toFixed(1)}
-          </span>
+
+        <button className="absolute top-4 right-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-white/60 hover:text-white transition-colors border border-white/10 opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 duration-300">
+          <Bookmark size={18} />
+        </button>
+
+        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black to-transparent" />
+        
+        <div className="absolute bottom-4 left-4">
+          <PlatformBadge name={course.platform} category={course.platforms?.category || 'Global'} />
         </div>
-        <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-neutral-900 to-transparent" />
       </div>
 
-      {/* Content */}
-      <div className="flex flex-col flex-grow p-4 gap-2 relative">
-        {/* Platform + Level */}
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black text-certifind-accent uppercase tracking-wider truncate max-w-[55%]">
-            {course.platform}
-          </span>
-          <span className="text-[10px] text-white/50 font-semibold bg-white/5 px-1.5 py-0.5 rounded uppercase">
-            {course.level}
-          </span>
+      {/* Content Area */}
+      <div className="p-6 flex flex-col flex-grow">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-1">
+            {ratingStars}
+          </div>
+          <span className="text-xs font-bold text-amber-400/80">({course.total_ratings.toLocaleString()})</span>
         </div>
 
-        {/* Title */}
-        <h3 className="text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-certifind-accent transition-colors duration-200">
+        <h3 className="text-lg font-bold text-white line-clamp-2 mb-2 group-hover:text-certifind-accent transition-colors leading-tight min-h-[44px]">
           {course.title}
         </h3>
 
-        {/* Instructor + Duration */}
-        <div className="flex items-center justify-between text-[11px] text-white/40 mt-auto pt-2 border-t border-white/5">
-          <span className="truncate max-w-[60%]">{course.instructor_name}</span>
-          <span className="flex items-center gap-1 flex-shrink-0">
-            <Clock className="w-3 h-3" /> {course.duration_hours}h
-          </span>
+        <p className="text-sm text-neutral-400 mb-4">{course.instructor_name}</p>
+
+        {/* Course Details Meta */}
+        <div className="grid grid-cols-2 gap-y-3 mb-6 pt-4 border-t border-white/5">
+          <div className="flex items-center gap-2 text-neutral-500">
+            <Clock size={14} />
+            <span className="text-xs font-medium">{course.duration_hours?.toFixed(1) || '0'} hrs</span>
+          </div>
+          <div className="flex items-center gap-2 text-neutral-500">
+            <BarChart size={14} />
+            <span className="text-xs font-medium">{course.level}</span>
+          </div>
+          {course.certificate_offered && (
+            <div className="flex items-center gap-2 text-neutral-500 col-span-2">
+              <Trophy size={14} className="text-certifind-accent" />
+              <span className="text-xs font-medium">Certification Offered</span>
+            </div>
+          )}
         </div>
 
-        {/* Enroll CTA — visual indicator only, card itself is the link */}
-        <div className="mt-1 w-full bg-certifind-accent/10 group-hover:bg-certifind-accent text-certifind-accent group-hover:text-white border border-certifind-accent/30 group-hover:border-certifind-accent font-bold py-2 rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 text-xs">
-          Enroll Now <ExternalLink className="w-3 h-3" />
-        </div>
+        {/* Pricing & CTA */}
+        <div className="mt-auto flex items-center justify-between">
+          <div className="flex flex-col">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-white">
+                {course.course_type === 'Free' ? 'FREE' : `$${course.price}`}
+              </span>
+              {course.original_price && course.original_price > course.price && (
+                <span className="text-sm text-neutral-600 line-through">
+                  ${course.original_price}
+                </span>
+              )}
+            </div>
+            {course.discount_percentage && (
+              <span className="text-[10px] font-bold text-certifind-accent uppercase tracking-widest">
+                Save {course.discount_percentage}%
+              </span>
+            )}
+          </div>
 
-        {/* Bookmark — stops card click from propagating */}
-        <div
-          className="absolute top-3 right-3"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          <BookmarkButton courseId={course.course_id} />
+          <a
+            href={course.course_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-5 py-2.5 bg-certifind-accent text-white text-sm font-bold rounded-xl hover:bg-certifind-accent/80 transition-all shadow-lg shadow-certifind-accent/20"
+          >
+            <span>Learn</span>
+            <ExternalLink size={14} />
+          </a>
         </div>
       </div>
-    </a>
-  );
+    </div>
+  )
 }
+
+export default CourseCard

@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const start = (page - 1) * limit;
     const end = start + limit - 1;
 
-    let query = supabase.from('courses').select('*', { count: 'exact' });
+    let query = supabase.from('courses').select('*, platforms(*)', { count: 'exact' });
 
     // 1. Exact Match Filters
     if (course_type) query = query.eq('course_type', course_type);

@@ -10,7 +10,10 @@ module.exports = {
       colors: {
         certifind: {
           bg: '#010030',
-          accent: '#7226FF'
+          primary: '#160078',
+          accent: '#7226FF',
+          text: '#FFFFFF',
+          border: 'rgba(114, 38, 255, 0.3)',
         }
       },
       animation: {

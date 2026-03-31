@@ -1,0 +1,41 @@
+import {
+  GraduationCap, BookOpen, Globe, Code2,
+  Linkedin, Brain, BarChart2, Palette,
+  Building2, FlaskConical, Trophy, Cpu
+} from "lucide-react"
+
+export const platformIconMap: 
+  Record<string, React.ElementType> = {
+  "Coursera":           GraduationCap,
+  "Udemy":              BookOpen,
+  "edX":                GraduationCap,
+  "FutureLearn":        Globe,
+  "Skillshare":         Palette,
+  "Udacity":            Cpu,
+  "LinkedIn Learning":  Linkedin,
+  "Khan Academy":       Brain,
+  "Alison":             Trophy,
+  "Pluralsight":        Code2,
+  "freeCodeCamp":       Code2,
+  "Codecademy":         Code2,
+  "GeeksforGeeks":      Cpu,
+  "HackerRank":         Trophy,
+  "LeetCode":           Trophy,
+  "DataCamp":           BarChart2,
+  "Simplilearn":        GraduationCap,
+  "Great Learning":     GraduationCap,
+  "NPTEL":              GraduationCap,
+  "SWAYAM":             GraduationCap,
+  "Unacademy":          BookOpen,
+  "BYJU'S":             Brain,
+  "upGrad":             GraduationCap,
+  "Internshala Trainings": Building2,
+  "PrepInsta":          Trophy,
+  "Domestika":          Palette,
+  "Canva Design School": Palette,
+  "Interaction Design Foundation": Palette,
+  "Envato Tuts+":       Palette,
+  "Harvard Online":     Building2,
+  "MIT OpenCourseWare": FlaskConical,
+  "OpenLearn":          Globe,
+}
