@@ -24,7 +24,18 @@ export async function POST(request: Request) {
       }),
       supabase
         .from('courses')
-        .select('course_id, title, department, tags, rating')
+        .select(`
+          course_id, 
+          title, 
+          department, 
+          tags, 
+          rating, 
+          level, 
+          platforms (
+            name,
+            category
+          )
+        `)
     ]);
     
     if (dbError || !courses) {
@@ -35,11 +46,10 @@ export async function POST(request: Request) {
       throw new Error('No text extracted from PDF. The file may be empty or encrypted.');
     }
     
-    // Join text if it comes as an array (common in some unpdf versions)
     const rawText = Array.isArray(extracted.text) ? extracted.text.join(' ') : extracted.text;
     const resumeText = rawText.toLowerCase();
 
-    // 1. Identify skills present in resume (O(n) skills in DB)
+    // 1. Identify skills
     const ALL_SKILLS = Array.from(new Set(courses.flatMap(c => [
       (c.department || "").toLowerCase(),
       ...(c.tags || []).map((t: string) => (t || "").toLowerCase())
@@ -48,31 +58,43 @@ export async function POST(request: Request) {
     const matchedSkillsList = ALL_SKILLS.filter(skill => skill && resumeText.includes(skill.toLowerCase()));
     const matchedSkillsSet = new Set(matchedSkillsList);
 
-    // 2. Optimized Scoring Algorithm (O(n) courses)
-    const recommendations = courses.map(course => {
-      const courseSkills = [
-        (course.department || "").toLowerCase(),
-        ...(course.tags || []).map((t: string) => (t || "").toLowerCase())
-      ];
+    // 2. Synthesize 3-Phase Roadmap
+    // We want P1: Foundations, P2: Core, P3: Advanced
+    const roadmapPhases = [
+      { id: 'p1', title: 'Phase 1: Skill Foundations', levelMatch: ['Beginner', 'All Levels'] },
+      { id: 'p2', title: 'Phase 2: Core Engineering', levelMatch: ['Intermediate', 'All Levels'] },
+      { id: 'p3', title: 'Phase 3: Elite Specialization', levelMatch: ['Advanced'] }
+    ];
+
+    const recommendations = roadmapPhases.map(phase => {
+      const candidates = courses.filter(c => phase.levelMatch.includes(c.level || 'All Levels'));
       
-      const newSkillsCount = courseSkills.filter(s => !matchedSkillsSet.has(s)).length;
-      const matchScore = courseSkills.filter(s => matchedSkillsSet.has(s)).length;
-      
-      return {
-        ...course,
-        newSkillsCount,
-        matchScore,
-        // Impact Score: Combination of new skills provided and course quality
-        impactScore: (newSkillsCount * 2) + (course.rating || 0)
-      };
-    })
-    .sort((a, b) => b.impactScore - a.impactScore)
-    .slice(0, 3); // Top 3 recommendations
+      const scores = (candidates.length > 0 ? candidates : courses).map(course => {
+        const courseSkills = [
+          (course.department || "").toLowerCase(),
+          ...(course.tags || []).map((t: string) => (t || "").toLowerCase())
+        ];
+        
+        const newSkillsCount = courseSkills.filter(s => !matchedSkillsSet.has(s)).length;
+        const matchScore = courseSkills.filter(s => matchedSkillsSet.has(s)).length;
+        
+        return {
+          ...course,
+          newSkillsCount,
+          matchScore,
+          phaseId: phase.id,
+          phaseTitle: phase.title,
+          impactScore: (newSkillsCount * 3) + (course.rating || 0) + (matchScore * 0.5)
+        };
+      });
+
+      return scores.sort((a, b) => b.impactScore - a.impactScore)[0];
+    }).filter(Boolean);
 
     return NextResponse.json({
-      detectedSkills: matchedSkillsList.slice(0, 10), // Limit for UI
+      detectedSkills: matchedSkillsList.slice(0, 10),
       recommendations,
-      summary: `We analyzed your profile and found ${matchedSkillsList.length} core competencies. Based on current industry demand in our database, we identified ${recommendations.length} key growth areas.`
+      summary: `Our AI scanned your profile and identified ${matchedSkillsList.length} core competencies. We've structured a 3-phase roadmap to bridge your skill gaps and elevate your market value.`
     });
 
   } catch (err: any) {

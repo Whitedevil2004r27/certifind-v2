@@ -119,9 +119,8 @@ def fetch_image_for_course(course, c_id):
     else:
         keyword = "education"
         
-    keyword = re.sub(r'[^a-zA-Z0-]-', '', keyword) # clean
-    
-    unsplash_url = f"https://source.unsplash.com/480x270/?{keyword}&sig={c_id}"
+    keyword = re.sub(r'[^a-zA-Z0-]-', '', keyword)
+    unsplash_url = f"https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800&sig={c_id}"
     print(f"   [Unsplash Fallback] {unsplash_url}")
     return unsplash_url
 

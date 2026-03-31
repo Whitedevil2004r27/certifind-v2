@@ -68,7 +68,22 @@ export async function GET(request: Request) {
     // 5. Apply Pagination Pipeline
     const { data, error, count } = await query.range(start, end);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase Query Error:', error);
+      // Fallback: try without the join if the join failed due to RLS/Schema
+      if (error.message.includes('relation') || error.message.includes('platforms')) {
+        console.log('Retrying without platforms join...');
+        const fallbackQuery = supabase.from('courses').select('*', { count: 'exact' });
+        const { data: fData, error: fError, count: fCount } = await fallbackQuery.range(start, end);
+        if (fError) throw fError;
+        
+        return NextResponse.json({
+          courses: fData,
+          pagination: { total: fCount, page, limit, totalPages: Math.ceil((fCount || 0) / limit) }
+        });
+      }
+      throw error;
+    }
 
     return NextResponse.json({
       courses: data,
@@ -81,7 +96,11 @@ export async function GET(request: Request) {
     });
 
   } catch (err: any) {
-    console.error('Error fetching courses API Route:', err);
-    return NextResponse.json({ error: 'Failed to fetch courses' }, { status: 500 });
+    console.error('CRITICAL API ERROR [/api/courses]:', err);
+    return NextResponse.json({ 
+      error: 'Failed to fetch courses', 
+      details: err.message,
+      hint: 'Check if platforms table RLS is enabled and select policy exists.'
+    }, { status: 500 });
   }
 }

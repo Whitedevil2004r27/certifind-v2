@@ -1,14 +1,21 @@
-import React from 'react'
+"use client"
+
+import React, { useState, useEffect } from 'react'
 import { Star, Clock, BarChart, Bookmark, ExternalLink, Trophy } from 'lucide-react'
 import PlatformBadge from './PlatformBadge'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 export interface Course {
   course_id: string
   title: string
+  description?: string
   instructor_name: string
   platform: string
   platforms?: {
     category: string
+    name?: string
   }
   department: string
   course_type: string
@@ -27,10 +34,59 @@ export interface Course {
 }
 
 interface CourseCardProps {
-  course: Course
+  course: Course;
+  onBookmarkToggle?: (courseId: string, isBookmarked: boolean) => void;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
+const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => {
+  const router = useRouter()
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const checkBookmark = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        const { data } = await supabase
+          .from('bookmarks')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('course_id', course.course_id)
+          .maybeSingle()
+        if (data) setIsBookmarked(true)
+      }
+    }
+    checkBookmark()
+  }, [course.course_id])
+
+  const toggleBookmark = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    setLoading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
+      alert("Sign in to bookmark courses!")
+      setLoading(false)
+      return
+    }
+
+    if (isBookmarked) {
+      const { error } = await supabase.from('bookmarks').delete().eq('user_id', session.user.id).eq('course_id', course.course_id)
+      if (!error) {
+        setIsBookmarked(false)
+        onBookmarkToggle?.(course.course_id, false)
+      }
+    } else {
+      const { error } = await supabase.from('bookmarks').insert({ user_id: session.user.id, course_id: course.course_id })
+      if (!error) {
+        setIsBookmarked(true)
+        onBookmarkToggle?.(course.course_id, true)
+      }
+    }
+    setLoading(false)
+  }
+
   const ratingStars = Array.from({ length: 5 }, (_, i) => (
     <Star
       key={i}
@@ -40,9 +96,9 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   ))
 
   return (
-    <div className="group flex flex-col bg-certifind-bg/40 border border-white/5 rounded-3xl overflow-hidden hover:border-certifind-accent/40 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(114,38,255,0.1)] h-full backdrop-blur-sm">
+    <div className="group flex flex-col bg-certifind-bg/40 border border-white/5 rounded-3xl overflow-hidden hover:border-certifind-accent/40 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(114,38,255,0.1)] h-full backdrop-blur-sm relative">
       {/* Thumbnail Area */}
-      <div className="relative aspect-video overflow-hidden">
+      <Link href={`/courses/${course.course_id}`} className="relative aspect-video overflow-hidden cursor-pointer block">
         <img
           src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop'}
           alt={course.title}
@@ -63,8 +119,14 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
           )}
         </div>
 
-        <button className="absolute top-4 right-4 p-2 bg-black/40 backdrop-blur-md rounded-full text-white/60 hover:text-white transition-colors border border-white/10 opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 duration-300">
-          <Bookmark size={18} />
+        <button 
+          onClick={toggleBookmark}
+          disabled={loading}
+          className={`absolute top-4 right-4 p-2 backdrop-blur-md rounded-full transition-all border border-white/10 opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 duration-300 z-20 ${
+            isBookmarked ? 'bg-rose-500 text-white opacity-100 translate-y-0' : 'bg-black/40 text-white/60 hover:text-white'
+          }`}
+        >
+          <Bookmark size={18} className={isBookmarked ? 'fill-white' : ''} />
         </button>
 
         <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black to-transparent" />
@@ -72,7 +134,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
         <div className="absolute bottom-4 left-4">
           <PlatformBadge name={course.platform} category={course.platforms?.category || 'Global'} />
         </div>
-      </div>
+      </Link>
 
       {/* Content Area */}
       <div className="p-6 flex flex-col flex-grow">
@@ -83,9 +145,11 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
           <span className="text-xs font-bold text-amber-400/80">({course.total_ratings.toLocaleString()})</span>
         </div>
 
-        <h3 className="text-lg font-bold text-white line-clamp-2 mb-2 group-hover:text-certifind-accent transition-colors leading-tight min-h-[44px]">
-          {course.title}
-        </h3>
+        <Link href={`/courses/${course.course_id}`}>
+          <h3 className="text-lg font-bold text-white line-clamp-2 mb-2 group-hover:text-certifind-accent transition-colors leading-tight min-h-[44px] cursor-pointer">
+            {course.title}
+          </h3>
+        </Link>
 
         <p className="text-sm text-neutral-400 mb-4">{course.instructor_name}</p>
 

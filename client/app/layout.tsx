@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${inter.className} bg-neutral-950 text-neutral-50 min-h-screen flex flex-col`}>
         <Navbar />
         <main className="flex-grow">

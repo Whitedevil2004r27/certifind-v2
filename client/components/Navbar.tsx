@@ -150,6 +150,7 @@ export default function Navbar() {
                 onClick={() => setMobileOpen(prev => !prev)}
                 className="md:hidden flex items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all"
                 aria-label="Toggle menu"
+                suppressHydrationWarning
               >
                 {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>

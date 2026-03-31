@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS courses CASCADE;
 CREATE TABLE courses (
   course_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   title text NOT NULL,
+  description text,
   instructor_name text NOT NULL,
   platform text NOT NULL,
   department text NOT NULL,

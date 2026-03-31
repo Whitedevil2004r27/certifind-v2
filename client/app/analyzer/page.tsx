@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Upload, FileText, CheckCircle2, TrendingUp, Sparkles, Loader2, ArrowRight, Download, Eye, X, Edit3 } from "lucide-react";
 import Link from "next/link";
+import RoadmapStep from "@/components/RoadmapStep";
 import ResumeTemplate from "@/components/ResumeTemplate";
 import { generateResumePDF } from "@/lib/pdf-generator";
 
@@ -199,36 +200,38 @@ export default function AnalyzerPage() {
               </div>
             </div>
 
-            {/* Course Recommendations */}
-            <div>
-              <div className="flex items-center gap-4 mb-8">
-                <TrendingUp className="w-8 h-8 text-certifind-accent" />
-                <h2 className="text-3xl font-black text-white tracking-tight">Recommended Tracks</h2>
+            {/* Course Recommendations / Roadmap */}
+            <div className="relative pt-10">
+              <div className="flex items-center gap-4 mb-16 justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-certifind-accent/20 flex items-center justify-center border border-certifind-accent/30 shadow-[0_0_20px_rgba(114,38,255,0.2)]">
+                  <TrendingUp className="w-6 h-6 text-certifind-accent" />
+                </div>
+                <div>
+                  <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">AI Roadmap <span className="text-certifind-accent">V2.0</span></h2>
+                  <p className="text-neutral-500 font-bold text-sm tracking-widest uppercase">3-Stage Career Acceleration Plan</p>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {result.recommendations.map((rec: any, idx: number) => (
-                  <div key={rec.course_id} className="bg-neutral-900/60 border border-white/5 rounded-3xl overflow-hidden hover:border-certifind-accent/50 transition-all duration-500 group">
-                    <div className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="bg-certifind-accent/10 text-certifind-accent text-[10px] font-black px-2.5 py-1 rounded-full border border-certifind-accent/20 uppercase tracking-widest">P{idx + 1}</span>
-                        <div className="text-emerald-400 text-xs font-black">+{rec.newSkillsCount} new skills</div>
-                      </div>
-                      <h4 className="text-xl font-bold text-white mb-6 min-h-[56px] line-clamp-2">{rec.title}</h4>
-                      <Link href={`/courses/${rec.course_id}`} className="w-full bg-white/5 hover:bg-certifind-accent text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 group/btn">
-                        Enroll <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
+
+              <div className="relative">
+                <div className="space-y-4">
+                  {result.recommendations.map((course: any, idx: number) => (
+                    <RoadmapStep 
+                      key={course.course_id}
+                      index={idx}
+                      phase={course.phaseTitle || `Phase ${idx+1}`}
+                      course={course}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="text-center pt-8">
+            <div className="text-center pt-20">
               <button 
                 onClick={() => { setResult(null); setFile(null); }}
-                className="text-neutral-500 hover:text-white font-bold transition-colors flex items-center gap-2 mx-auto"
+                className="text-neutral-500 hover:text-white font-black uppercase tracking-[0.2em] text-[10px] transition-all flex items-center gap-3 mx-auto px-6 py-2 rounded-full border border-white/5 hover:border-white/10 bg-white/5"
               >
-                 Analysis History
+                <X className="w-3 h-3" /> Start New Analysis
               </button>
             </div>
           </div>

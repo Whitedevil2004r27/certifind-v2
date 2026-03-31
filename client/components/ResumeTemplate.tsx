@@ -31,35 +31,34 @@ export default function ResumeTemplate({ data }: { data: ResumeData }) {
       style={{ boxSizing: 'border-box' }}
     >
       {/* Header */}
-      <div className="border-b-4 border-blue-600 pb-8 mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-5xl font-black tracking-tight text-gray-900 mb-2 uppercase italic">
+      <div className="border-b-8 border-certifind-primary pb-8 mb-8 flex justify-between items-end">
+        <div className="flex-1">
+          <h1 className="text-5xl font-black tracking-tight text-neutral-900 mb-2 uppercase italic leading-none">
             {data.fullName}
           </h1>
-          <div className="flex flex-wrap gap-4 text-xs font-bold text-gray-500 uppercase tracking-widest">
-            {data.email && <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {data.email}</div>}
-            {data.phone && <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {data.phone}</div>}
-            {data.location && <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {data.location}</div>}
+          <div className="flex flex-wrap gap-4 text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] mt-2">
+            {data.email && <div className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-certifind-primary" /> {data.email}</div>}
+            {data.phone && <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-certifind-primary" /> {data.phone}</div>}
+            {data.location && <div className="flex items-center gap-1.5"><MapPin className="w-3 h-3 text-certifind-primary" /> {data.location}</div>}
           </div>
         </div>
-        <div className="flex gap-3">
-          {data.linkedin && <Linkedin className="w-5 h-5 text-gray-400" />}
-          {data.website && <Globe className="w-5 h-5 text-gray-400" />}
+        <div className="flex gap-4">
+          {data.linkedin && <Linkedin className="w-5 h-5 text-neutral-300" />}
+          {data.website && <Globe className="w-5 h-5 text-neutral-300" />}
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-10">
-        {/* Left Column - Sidebar */}
-        <div className="col-span-1 border-r border-gray-100 pr-6">
-          <section className="mb-8">
-            <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> Core Expertise
+        <div className="col-span-1 border-r border-neutral-100 pr-8">
+          <section className="mb-10">
+            <h3 className="text-[10px] font-black text-certifind-primary uppercase tracking-[0.25em] mb-5 flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Key Expertise
             </h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2">
               {data.skills.map((skill, i) => (
-                <span key={i} className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded text-[10px] font-black uppercase border border-gray-200">
-                  {skill}
-                </span>
+                <div key={i} className="flex items-center gap-2 text-[10px] font-bold text-neutral-700 uppercase">
+                   <div className="w-1 h-1 rounded-full bg-certifind-primary" /> {skill}
+                </div>
               ))}
             </div>
           </section>

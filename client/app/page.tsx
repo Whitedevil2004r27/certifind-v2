@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import CourseCard, { Course } from "@/components/CourseCard";
 import { Search, Loader2, Award, Zap, ChevronDown } from "lucide-react";
 import Link from "next/link";
+import StatsCounter from "@/components/StatsCounter";
+import PlatformSpotlight from "@/components/PlatformSpotlight";
 
 const DEPARTMENTS = [
   { label: "All", value: "All" },
@@ -37,6 +39,21 @@ export default function HomePage() {
   const [totalFree, setTotalFree] = useState(0);
   const [totalPaid, setTotalPaid] = useState(0);
   const [loadingMore, setLoadingMore] = useState<"free" | "paid" | null>(null);
+  const [stats, setStats] = useState({
+    courses: 44,
+    platforms: 32,
+    activeUsers: 1250,
+    topDepartments: 12
+  });
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) setStats(data);
+      })
+      .catch(err => console.error("Stats fetch failed:", err));
+  }, []);
 
   const fetchCourses = useCallback(async (
     currentSearch: string,
@@ -129,6 +146,17 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Stats Bar */}
+      <section className="relative -mt-12 z-20 max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatsCounter end={stats.courses} label="Verified Courses" suffix="+" />
+        <StatsCounter end={stats.platforms} label="Global Platforms" />
+        <StatsCounter end={stats.activeUsers} label="Active Learners" suffix="+" />
+        <StatsCounter end={stats.topDepartments} label="Learning Tracks" />
+      </section>
+
+      {/* Discovery spotlight */}
+      <PlatformSpotlight />
+
       {/* Main Discover Frame */}
       <section className="py-16 max-w-[1400px] mx-auto px-4 sm:px-6">
 
@@ -143,6 +171,7 @@ export default function HomePage() {
                   ? "bg-certifind-accent text-white border-certifind-accent/50 shadow-[0_0_12px_rgba(114,38,255,0.4)]"
                   : "bg-white/5 text-neutral-400 border-white/10 hover:bg-white/10 hover:text-white"
               }`}
+              suppressHydrationWarning
             >
               {label}
             </button>
