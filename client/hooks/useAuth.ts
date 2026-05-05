@@ -23,7 +23,7 @@ export function useAuth() {
       password,
       options: {
         data: { full_name: fullName, role },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '',
       },
     });
     if (error) throw error;
@@ -38,7 +38,7 @@ export function useAuth() {
 
   const resetPassword = useCallback(async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : '',
     });
     if (error) throw error;
   }, []);
@@ -51,7 +51,7 @@ export function useAuth() {
   const sendMagicLink = useCallback(async (email: string) => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '' },
     });
     if (error) throw error;
   }, []);

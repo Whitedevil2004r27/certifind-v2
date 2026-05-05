@@ -31,12 +31,16 @@ const generateCourses = (count) => {
       title,
       description,
       platform,
-      category,
-      is_free: false,
-      price,
+      department: category, // Matches schema
+      course_type: 'Paid', // Matches schema
+      price: parseFloat(price.replace('$', '').replace('/mo', '')), // Numeric
       rating: parseFloat(rating),
-      thumbnail,
-      course_url: 'https://example.com/course/' + Math.floor(Math.random() * 1000000)
+      thumbnail_url: thumbnail, // Matches schema
+      course_url: 'https://example.com/course/' + Math.floor(Math.random() * 1000000),
+      level: ['Beginner', 'Intermediate', 'Advanced', 'All Levels'][Math.floor(Math.random() * 4)],
+      instructor_name: 'CertiFind Expert',
+      is_new: Math.random() > 0.8,
+      is_bestseller: Math.random() > 0.8
     });
   }
   return courses;

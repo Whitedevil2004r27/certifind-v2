@@ -1,7 +1,9 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+// Imports moved inside function to be SSR-safe
 
 export const generateResumePDF = async (elementId: string, filename: string = 'My_Elite_Resume.pdf') => {
+  const jsPDF = (await import('jspdf')).default;
+  const html2canvas = (await import('html2canvas')).default;
+
   const element = document.getElementById(elementId);
   if (!element) {
     console.error('Resume element not found');
