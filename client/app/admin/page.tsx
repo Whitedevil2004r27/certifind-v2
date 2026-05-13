@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { ShieldCheck, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import Link from "next/link";
+
+type AdminUser = {
+  email: string;
+  name: string;
+  role: string;
+};
 
 export default function AdminPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: "" });
@@ -22,14 +28,29 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setUser(session.user);
-      }
-      setLoading(false);
+    let mounted = true;
+
+    fetch('/api/me')
+      .then(async (response) => {
+        if (!mounted) return;
+        if (!response.ok) {
+          setUser(null);
+          return;
+        }
+
+        const data = await response.json();
+        setUser(data);
+      })
+      .catch(() => {
+        if (mounted) setUser(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
     };
-    checkAdmin();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -44,13 +65,20 @@ export default function AdminPage() {
     try {
       const payload = {
         ...formData,
-        is_free: formData.is_free === "true",
-        price: formData.is_free === "true" ? null : formData.price,
+        course_type: formData.is_free === "true" ? "Free" : "Paid",
+        department: formData.category,
+        price: formData.is_free === "true" ? 0 : parseFloat(formData.price || "0"),
+        thumbnail_url: formData.thumbnail,
       };
 
-      const { error } = await supabase.from('courses').insert(payload);
+      const res = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add course");
 
       setStatus({ type: 'success', message: "Course successfully added to the catalog!" });
       setFormData({
@@ -72,6 +100,7 @@ export default function AdminPage() {
       setTimeout(() => setStatus({ type: null, message: "" }), 5000);
     }
   };
+
 
   if (loading) {
     return (
@@ -105,7 +134,26 @@ export default function AdminPage() {
     );
   }
 
-  if (!user || !adminEmails.includes(user.email?.toLowerCase())) {
+  const isAdmin = Boolean(
+    user && (user.role === "admin" || adminEmails.includes(user.email?.toLowerCase() ?? ""))
+  );
+
+  if (!user) {
+    return (
+      <div className="flex flex-col min-h-[70vh] items-center justify-center text-center px-4 gap-4">
+        <ShieldCheck className="w-16 h-16 text-rose-500 mb-2" />
+        <h1 className="text-3xl font-black text-white">Sign In Required</h1>
+        <p className="text-neutral-400 max-w-md text-base">
+          Admin tools are protected. Sign in with an administrator account to continue.
+        </p>
+        <Link href="/login?callbackUrl=/admin" className="bg-white text-black font-black px-6 py-3 rounded-full">
+          Sign in
+        </Link>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
     return (
       <div className="flex flex-col min-h-[70vh] items-center justify-center text-center px-4 gap-4">
         <ShieldCheck className="w-16 h-16 text-rose-500 mb-2" />
@@ -127,7 +175,7 @@ export default function AdminPage() {
           Admin Dashboard
         </h1>
         <p className="text-xl text-neutral-400">
-          Manually add premium or obscure courses directly to the Supabase database.
+          Manually add premium or obscure courses directly to the Neon database.
         </p>
       </div>
 
@@ -154,7 +202,7 @@ export default function AdminPage() {
           <div className="space-y-2">
             <label className="text-sm font-bold text-neutral-300 uppercase tracking-wider">Platform</label>
             <select name="platform" value={formData.platform} onChange={handleChange} className="w-full bg-black/50 border border-neutral-700 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none">
-              {["Coursera", "Udemy", "edX", "Pluralsight", "Udacity", "YouTube", "Other"].map(p => <option key={p} value={p}>{p}</option>)}
+              {["Coursera", "Udemy", "edX", "Pluralsight", "Udacity", "LinkedIn Learning", "Khan Academy"].map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
 

@@ -1,13 +1,13 @@
-const { createClient } = require('@supabase/supabase-js');
+const { neon } = require('@neondatabase/serverless');
 require('dotenv').config();
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+const databaseUrl = process.env.DATABASE_URL || '';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn("⚠️ WARNING: Missing SUPABASE_URL or SUPABASE_ANON_KEY in server environment.");
+if (!databaseUrl) {
+  console.warn("⚠️ WARNING: Missing DATABASE_URL in server environment.");
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const sql = neon(databaseUrl);
 
-module.exports = supabase;
+module.exports = sql;
+

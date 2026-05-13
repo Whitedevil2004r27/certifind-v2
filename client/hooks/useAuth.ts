@@ -1,16 +1,29 @@
 'use client';
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { signIn, signOut, useSession } from 'next-auth/react';
 
 export function useAuth() {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
-  }, []);
+  const login = useCallback(async (
+    email: string,
+    password: string,
+    redirectTo = '/dashboard'
+  ) => {
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+    
+    if (result?.error) throw new Error(result.error);
+    
+    router.push(redirectTo);
+    router.refresh();
+    return result;
+  }, [router]);
 
   const signup = useCallback(async (
     email: string,
@@ -18,59 +31,28 @@ export function useAuth() {
     fullName: string,
     role: 'student' | 'premium' = 'student'
   ) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, role },
-        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '',
-      },
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, fullName, role }),
     });
-    if (error) throw error;
-    return data;
-  }, []);
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to sign up');
+    
+    return login(email, password);
+  }, [login]);
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut();
+    await signOut({ redirect: false });
     router.push('/login');
     router.refresh();
   }, [router]);
 
-  const resetPassword = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : '',
-    });
-    if (error) throw error;
-  }, []);
-
-  const updatePassword = useCallback(async (newPassword: string) => {
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) throw error;
-  }, []);
-
-  const sendMagicLink = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '' },
-    });
-    if (error) throw error;
-  }, []);
-
-  const getSession = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session;
-  }, []);
-
   const getRole = useCallback(async (): Promise<string> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return 'guest';
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    return profile?.role ?? user.user_metadata?.role ?? 'student';
-  }, []);
+    return (session?.user as any)?.role ?? 'student';
+  }, [session]);
 
-  return { login, signup, logout, resetPassword, updatePassword, sendMagicLink, getSession, getRole };
+  return { login, signup, logout, session, status, getRole };
 }
+

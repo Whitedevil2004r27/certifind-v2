@@ -6,10 +6,12 @@ import { z } from 'zod';
 import { Eye, EyeOff, Mail, Lock, User, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { SignUp } from '@clerk/nextjs';
 import AuthLayout from '@/components/auth/AuthLayout';
 import SocialAuthButtons from '@/components/auth/SocialAuthButtons';
-import PasswordStrengthMeter, { getPasswordStrength } from '@/components/auth/PasswordStrengthMeter';
+import PasswordStrengthMeter from '@/components/auth/PasswordStrengthMeter';
 import { useAuth } from '@/hooks/useAuth';
+import { isClerkEnabled } from '@/lib/auth-config';
 
 const schema = z.object({
   fullName: z.string().min(2, 'Enter your full name'),
@@ -31,7 +33,27 @@ const INPUT_CLASS = "w-full bg-white/5 border rounded-xl px-4 py-3 text-white te
 const BORDER_DEFAULT = "border-white/10 focus:border-purple-500/70";
 const BORDER_ERROR = "border-red-500/50 focus:border-red-500";
 
-export default function SignupPage() {
+function ClerkSignup() {
+  return (
+    <AuthLayout>
+      <div className="flex justify-center">
+        <SignUp
+          routing="hash"
+          signInUrl="/login"
+          fallbackRedirectUrl="/dashboard"
+          appearance={{
+            elements: {
+              rootBox: "w-full",
+              cardBox: "w-full shadow-none",
+            },
+          }}
+        />
+      </div>
+    </AuthLayout>
+  );
+}
+
+function LegacySignupForm() {
   const router = useRouter();
   const { signup } = useAuth();
   const [showPass, setShowPass] = useState(false);
@@ -49,7 +71,8 @@ export default function SignupPage() {
     setError(''); setLoading(true);
     try {
       await signup(data.email, data.password, data.fullName, data.role);
-      router.push('/verify-email');
+      router.push('/dashboard');
+      router.refresh();
     } catch (err: any) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally { setLoading(false); }
@@ -118,7 +141,7 @@ export default function SignupPage() {
           <div>
             <p className="text-xs font-black text-white/40 uppercase tracking-widest mb-2">I am a...</p>
             <div className="grid grid-cols-2 gap-2">
-              {([['student', '🎓 Student', 'Free access to all courses'], ['premium', '⚡ Premium', 'Paid courses + certificates']] as const).map(([val, label, desc]) => (
+              {([['student', 'Student', 'Free access to all courses'], ['premium', 'Premium', 'Paid courses and certificates']] as const).map(([val, label, desc]) => (
                 <label key={val}
                   className="flex flex-col gap-1 p-3 rounded-xl border cursor-pointer transition-all hover:border-purple-500/40"
                   style={{ borderColor: '#7226FF20', backgroundColor: '#160078' + '30' }}>
@@ -152,4 +175,12 @@ export default function SignupPage() {
       </div>
     </AuthLayout>
   );
+}
+
+export default function SignupPage() {
+  if (isClerkEnabled()) {
+    return <ClerkSignup />;
+  }
+
+  return <LegacySignupForm />;
 }

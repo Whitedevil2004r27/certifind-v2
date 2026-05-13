@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Search, Info } from 'lucide-react'
 import PlatformGrid from '@/components/PlatformGrid'
-import { supabase } from '@/lib/supabase'
+
 
 interface Platform {
   id: string
@@ -24,19 +24,22 @@ export default function PlatformsPage() {
   useEffect(() => {
     async function fetchPlatforms() {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('platforms')
-        .select('*')
-        .order('category')
-      
-      if (data) {
-        setPlatforms(data)
+      try {
+        const res = await fetch('/api/platforms');
+        const data = await res.json();
+        if (data && !data.error) {
+          setPlatforms(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch platforms:", err);
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     fetchPlatforms()
-  }, [supabase])
+  }, [])
+
 
   const filteredPlatforms = platforms.filter(platform => 
     platform.name.toLowerCase().includes(searchQuery.toLowerCase())

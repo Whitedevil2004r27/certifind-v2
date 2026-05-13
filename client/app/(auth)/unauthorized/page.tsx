@@ -1,5 +1,5 @@
 'use client';
-import { ShieldAlert, Home, ArrowLeft } from 'lucide-react';
+import { ShieldAlert, Home } from 'lucide-react';
 import Link from 'next/link';
 import AuthLayout from '@/components/auth/AuthLayout';
 

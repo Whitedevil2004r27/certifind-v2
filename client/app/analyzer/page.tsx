@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, FileText, CheckCircle2, TrendingUp, Sparkles, Loader2, ArrowRight, Download, Eye, X, Edit3 } from "lucide-react";
-import Link from "next/link";
+import { Upload, CheckCircle2, TrendingUp, Sparkles, Loader2, ArrowRight, Download, Eye, X } from "lucide-react";
 import RoadmapStep from "@/components/RoadmapStep";
 import ResumeTemplate from "@/components/ResumeTemplate";
 import { generateResumePDF } from "@/lib/pdf-generator";
@@ -134,7 +133,7 @@ export default function AnalyzerPage() {
                 </label>
               </div>
 
-              {error && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-6 py-4 rounded-2xl text-sm font-bold">❌ {error}</div>}
+              {error && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-500 px-6 py-4 rounded-2xl text-sm font-bold">Error: {error}</div>}
 
               <button
                 type="submit" disabled={!file || loading}

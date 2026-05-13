@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { platformIconMap } from '@/lib/platformIconMap'
-import { ChevronDown, ChevronUp, Search, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Search } from 'lucide-react'
 
 const DEPARTMENTS = [
   "Computer Science Engineering",
@@ -36,15 +35,19 @@ export default function FilterSidebar() {
 
   useEffect(() => {
     async function fetchPlatforms() {
-      const { data } = await supabase
-        .from('platforms')
-        .select('name, category')
-        .order('category')
-      if (data) setPlatforms(data)
-      setLoadingPlatforms(false)
+      try {
+        const res = await fetch('/api/platforms');
+        const data = await res.json();
+        if (data && !data.error) setPlatforms(data);
+      } catch (err) {
+        console.error("Failed to fetch platforms:", err);
+      } finally {
+        setLoadingPlatforms(false);
+      }
     }
     fetchPlatforms()
   }, [])
+
 
   const selectedDepts = searchParams.getAll("department")
   const selectedPlatforms = searchParams.getAll("platform")
@@ -125,7 +128,13 @@ export default function FilterSidebar() {
           </div>
 
           <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-            {Object.keys(groupedPlatforms).map((category) => {
+            {loadingPlatforms ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, index) => (
+                  <div key={index} className="h-8 rounded-xl bg-white/5 animate-pulse" />
+                ))}
+              </div>
+            ) : Object.keys(groupedPlatforms).map((category) => {
               const filtered = groupedPlatforms[category].filter(p => 
                 p.name.toLowerCase().includes(platformSearch.toLowerCase())
               )
@@ -159,7 +168,7 @@ export default function FilterSidebar() {
                               />
                               <div className="w-5 h-5 rounded-lg border-2 border-white/10 bg-white/5 peer-checked:bg-certifind-accent peer-checked:border-certifind-accent transition-all" />
                               <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
-                                <Search size={10} strokeWidth={4} /> {/* Placeholder for checkmark logic */}
+                                <Check size={10} strokeWidth={4} />
                               </div>
                             </div>
                             <div className={`p-1 rounded bg-white/5 border border-white/5 text-neutral-500 group-hover:text-certifind-accent transition-colors ${isChecked ? 'text-certifind-accent border-certifind-accent/30' : ''}`}>

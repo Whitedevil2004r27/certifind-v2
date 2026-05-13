@@ -1,67 +1,26 @@
 -- CertiFind Platforms System Setup
--- 1. Create platforms table
-create table platforms (
-  id uuid default gen_random_uuid() primary key,
-  name text unique not null,
-  category text not null check (category in (
+
+CREATE TABLE IF NOT EXISTS platforms (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text UNIQUE NOT NULL,
+  category text NOT NULL CHECK (category IN (
     'Global',
     'Tech & Development',
     'Indian',
     'Design & Creative',
     'Business & Management'
   )),
-  type text not null check (type in (
-    'Free',
-    'Paid',
-    'Free + Paid'
-  )),
+  type text NOT NULL CHECK (type IN ('Free', 'Paid', 'Free + Paid')),
   best_for text,
   website_url text,
   icon_name text,
-  is_active boolean default true,
-  created_at timestamp default now()
+  is_active boolean DEFAULT true,
+  created_at timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Create platform_type enum
-create type platform_type as enum (
-  'Coursera',
-  'Udemy',
-  'edX',
-  'FutureLearn',
-  'Skillshare',
-  'Udacity',
-  'LinkedIn Learning',
-  'Khan Academy',
-  'Alison',
-  'Pluralsight',
-  'freeCodeCamp',
-  'Codecademy',
-  'GeeksforGeeks',
-  'HackerRank',
-  'LeetCode',
-  'DataCamp',
-  'Simplilearn',
-  'Great Learning',
-  'NPTEL',
-  'SWAYAM',
-  'Unacademy',
-  'BYJU''S',
-  'upGrad',
-  'Internshala Trainings',
-  'PrepInsta',
-  'Domestika',
-  'Canva Design School',
-  'Interaction Design Foundation',
-  'Envato Tuts+',
-  'Harvard Online',
-  'MIT OpenCourseWare',
-  'OpenLearn'
-);
-
--- 3. Seed data
-insert into platforms 
+INSERT INTO platforms
   (name, category, type, best_for, website_url, icon_name)
-values
+VALUES
   ('Coursera','Global','Free + Paid','University courses','https://coursera.org','GraduationCap'),
   ('Udemy','Global','Paid','Skill-based courses','https://udemy.com','BookOpen'),
   ('edX','Global','Free + Paid','University + professional','https://edx.org','GraduationCap'),
@@ -93,18 +52,28 @@ values
   ('Envato Tuts+','Design & Creative','Free + Paid','Design tutorials','https://tutsplus.com','Palette'),
   ('Harvard Online','Business & Management','Free + Paid','Business + leadership','https://online.harvard.edu','Building2'),
   ('MIT OpenCourseWare','Business & Management','Free','Engineering + science','https://ocw.mit.edu','FlaskConical'),
-  ('OpenLearn','Business & Management','Free','General education','https://openlearn.open.ac.uk','Globe');
+  ('OpenLearn','Business & Management','Free','General education','https://openlearn.open.ac.uk','Globe')
+ON CONFLICT (name) DO UPDATE SET
+  category = EXCLUDED.category,
+  type = EXCLUDED.type,
+  best_for = EXCLUDED.best_for,
+  website_url = EXCLUDED.website_url,
+  icon_name = EXCLUDED.icon_name,
+  is_active = true;
 
--- 4. Update courses table
--- We assume current platform text values will match the enum labels.
--- Using USING to cast text to Enum.
-ALTER TABLE courses 
-  ALTER COLUMN platform TYPE platform_type 
-  USING platform::platform_type;
+UPDATE courses
+SET platform = 'LinkedIn Learning'
+WHERE platform = 'LinkedIn';
 
--- 5. Add Foreign Key linking courses.platform to platforms.name
-ALTER TABLE courses
-  ADD CONSTRAINT fk_courses_platform
-  FOREIGN KEY (platform::text)
-  REFERENCES platforms(name)
-  ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_courses_platform'
+  ) THEN
+    ALTER TABLE courses
+      ADD CONSTRAINT fk_courses_platform
+      FOREIGN KEY (platform)
+      REFERENCES platforms(name)
+      ON UPDATE CASCADE;
+  END IF;
+END $$;

@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import FilterSidebar from '@/components/FilterSidebar';
 import SearchBar from '@/components/SearchBar';
@@ -8,8 +7,6 @@ import SortDropdown from '@/components/SortDropdown';
 import CourseGrid from '@/components/CourseGrid';
 
 function FreeCoursesContent() {
-  const searchParams = useSearchParams();
-
   return (
     <div className="flex flex-col lg:flex-row gap-10 items-start w-full">
       {/* Sidebar Filters */}

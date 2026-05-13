@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import CourseCard, { Course } from "@/components/CourseCard";
 import { BookMarked, Loader2, LogIn } from "lucide-react";
 import Link from "next/link";
@@ -9,23 +8,26 @@ import Link from "next/link";
 export default function BookmarksPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [unauthorized, setUnauthorized] = useState(false);
 
   useEffect(() => {
     const fetchBookmarks = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setLoading(false); return; }
-      setUser(session.user);
+      try {
+        const res = await fetch('/api/bookmarks');
+        if (res.status === 401) {
+          setUnauthorized(true);
+          return;
+        }
 
-      const { data, error } = await supabase
-        .from('bookmarks')
-        .select(`course_id, courses (*)`)
-        .eq('user_id', session.user.id);
-
-      if (!error && data) {
-        setCourses(data.map((b: any) => b.courses).filter(Boolean));
+        const data = await res.json();
+        if (res.ok && data && !data.error) {
+          setCourses(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch bookmarks:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchBookmarks();
   }, []);
@@ -38,7 +40,7 @@ export default function BookmarksPage() {
     );
   }
 
-  if (!user) {
+  if (unauthorized) {
     return (
       <div className="flex flex-col min-h-[70vh] items-center justify-center text-center px-4 gap-6">
         <div className="w-20 h-20 bg-rose-500/10 border border-rose-500/20 rounded-full flex items-center justify-center">
@@ -49,16 +51,17 @@ export default function BookmarksPage() {
           <p className="text-neutral-400 max-w-sm mx-auto mb-6">
             Sign in to view and manage your saved courses across all sessions.
           </p>
-          <button
-            onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } })}
+          <Link
+            href="/login?callbackUrl=/bookmarks"
             className="inline-flex items-center gap-2 bg-white text-black font-black px-8 py-3.5 rounded-full hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] transition-all hover:-translate-y-0.5"
           >
-            <LogIn className="w-4 h-4 text-blue-600" /> Sign in with Google
-          </button>
+            <LogIn className="w-4 h-4 text-blue-600" /> Sign in
+          </Link>
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen py-12 sm:py-16 max-w-[1400px] mx-auto px-4 sm:px-6 relative">
@@ -75,7 +78,7 @@ export default function BookmarksPage() {
           </p>
         </div>
         <Link href="/" className="text-rose-400 font-bold hover:text-rose-300 transition-colors uppercase tracking-widest text-xs self-start sm:self-auto flex-shrink-0">
-          Browse Courses →
+          Browse Courses
         </Link>
       </div>
 
@@ -101,7 +104,7 @@ export default function BookmarksPage() {
             Click the bookmark icon on any course card to save it here for later.
           </p>
           <Link href="/" className="inline-flex items-center gap-2 bg-certifind-accent hover:bg-purple-600 text-white font-bold px-6 py-3 rounded-full text-sm transition-all">
-            Explore Courses →
+            Explore Courses
           </Link>
         </div>
       )}

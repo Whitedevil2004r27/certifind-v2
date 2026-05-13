@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
+import { getAppUser, isAdminUser } from '@/lib/current-user';
+import { getFallbackCourses } from '@/lib/fallback-catalog';
+
+export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   try {
@@ -18,89 +22,198 @@ export async function GET(request: Request) {
     const search = searchParams.get('search');
     const sort_by = searchParams.get('sort_by');
 
-    const start = (page - 1) * limit;
-    const end = start + limit - 1;
+    const offset = (page - 1) * limit;
 
-    let query = supabase.from('courses').select('*, platforms(*)', { count: 'exact' });
+    const whereConditions: string[] = [];
+    const queryParams: unknown[] = [];
+    let paramIndex = 1;
 
-    // 1. Exact Match Filters
-    if (course_type) query = query.eq('course_type', course_type);
+    if (course_type) {
+      whereConditions.push(`course_type = $${paramIndex++}`);
+      queryParams.push(course_type);
+    }
     
     if (departmentStr) {
       const deps = departmentStr.split(',');
-      if (deps.length > 1) query = query.in('department', deps);
-      else query = query.eq('department', deps[0]);
+      const placeholders = deps.map(() => `$${paramIndex++}`).join(', ');
+      whereConditions.push(`department IN (${placeholders})`);
+      queryParams.push(...deps);
     }
     
     if (platformStr) {
       const plats = platformStr.split(',');
-      if (plats.length > 1) query = query.in('platform', plats);
-      else query = query.eq('platform', plats[0]);
+      const placeholders = plats.map(() => `$${paramIndex++}`).join(', ');
+      whereConditions.push(`platform IN (${placeholders})`);
+      queryParams.push(...plats);
     }
     
     if (levelStr) {
       const lvls = levelStr.split(',');
-      if (lvls.length > 1) query = query.in('level', lvls);
-      else query = query.eq('level', lvls[0]);
+      const placeholders = lvls.map(() => `$${paramIndex++}`).join(', ');
+      whereConditions.push(`level IN (${placeholders})`);
+      queryParams.push(...lvls);
     }
 
-    // 2. Numeric Range Filters
-    if (min_rating) query = query.gte('rating', parseFloat(min_rating));
-    if (max_duration) query = query.lte('duration_hours', parseFloat(max_duration));
+    if (min_rating) {
+      whereConditions.push(`rating >= $${paramIndex++}`);
+      queryParams.push(parseFloat(min_rating));
+    }
+    if (max_duration) {
+      whereConditions.push(`duration_hours <= $${paramIndex++}`);
+      queryParams.push(parseFloat(max_duration));
+    }
 
-    // 3. Search Bar Integration
     if (search) {
-      query = query.or(`title.ilike.%${search}%,instructor_name.ilike.%${search}%`);
+      whereConditions.push(`(title ILIKE $${paramIndex} OR instructor_name ILIKE $${paramIndex})`);
+      queryParams.push(`%${search}%`);
+      paramIndex++;
     }
 
-    // 4. Advanced Sorting Parameters
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    let orderBy = 'ORDER BY rating DESC, total_ratings DESC';
     if (sort_by === 'newest') {
-      query = query.order('last_updated', { ascending: false });
-      query = query.order('is_new', { ascending: false });
+      orderBy = 'ORDER BY COALESCE(updated_at, scraped_at, last_updated::timestamptz) DESC, is_new DESC';
     } else if (sort_by === 'popularity') {
-      query = query.order('total_ratings', { ascending: false });
-      query = query.order('is_bestseller', { ascending: false });
-    } else {
-      // Default to highest rating
-      query = query.order('rating', { ascending: false });
+      orderBy = 'ORDER BY total_ratings DESC, is_bestseller DESC';
+    } else if (sort_by === 'updated') {
+      orderBy = 'ORDER BY COALESCE(updated_at, scraped_at, last_updated::timestamptz) DESC';
     }
 
-    // 5. Apply Pagination Pipeline
-    const { data, error, count } = await query.range(start, end);
+    const countQuery = `SELECT COUNT(*) FROM courses ${whereClause}`;
+    const dataQuery = `
+      SELECT c.*, p.category as platform_category
+      FROM courses c
+      LEFT JOIN platforms p ON c.platform = p.name
+      ${whereClause}
+      ${orderBy}
+      LIMIT $${paramIndex++} OFFSET $${paramIndex++}
+    `;
     
-    if (error) {
-      console.error('Supabase Query Error:', error);
-      // Fallback: try without the join if the join failed due to RLS/Schema
-      if (error.message.includes('relation') || error.message.includes('platforms')) {
-        console.log('Retrying without platforms join...');
-        const fallbackQuery = supabase.from('courses').select('*', { count: 'exact' });
-        const { data: fData, error: fError, count: fCount } = await fallbackQuery.range(start, end);
-        if (fError) throw fError;
-        
-        return NextResponse.json({
-          courses: fData,
-          pagination: { total: fCount, page, limit, totalPages: Math.ceil((fCount || 0) / limit) }
-        });
-      }
-      throw error;
-    }
+    const [countResult, dataResult] = await Promise.all([
+      query<{ count: string }>(countQuery, queryParams),
+      query(dataQuery, [...queryParams, limit, offset])
+    ]);
+
+    const totalCount = parseInt(countResult[0].count);
+
+    const courses = dataResult.map((course: any) => ({
+      ...course,
+      platforms: {
+        name: course.platform,
+        category: course.platform_category || 'Global',
+      },
+    }));
 
     return NextResponse.json({
-      courses: data,
+      source: 'neon',
+      courses,
       pagination: {
-        total: count,
+        total: totalCount,
         page,
         limit,
-        totalPages: Math.ceil((count || 0) / limit)
+        totalPages: Math.ceil(totalCount / limit)
       }
     });
 
   } catch (err: any) {
-    console.error('CRITICAL API ERROR [/api/courses]:', err);
-    return NextResponse.json({ 
-      error: 'Failed to fetch courses', 
+    console.error('Courses API using cached catalog:', err);
+    const { searchParams } = new URL(request.url);
+    const fallback = getFallbackCourses(searchParams);
+
+    return NextResponse.json({
+      source: 'cached',
+      warning: 'Neon is temporarily unavailable. Showing cached course catalog.',
       details: err.message,
-      hint: 'Check if platforms table RLS is enabled and select policy exists.'
-    }, { status: 500 });
+      ...fallback,
+    }, {
+      headers: {
+        'X-Certifind-Data-Source': 'cached',
+      },
+    });
   }
 }
+
+export async function POST(request: Request) {
+  const user = await getAppUser();
+
+  if (!isAdminUser(user)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const {
+      title,
+      description,
+      platform,
+      department,
+      course_type,
+      price,
+      original_price,
+      discount_percentage,
+      rating,
+      total_ratings,
+      duration_hours,
+      level,
+      language,
+      thumbnail_url,
+      course_url,
+      tags,
+      is_bestseller,
+      is_new,
+      certificate_offered,
+    } = body;
+
+    if (!title || !platform || !department || !course_type || !course_url) {
+      return NextResponse.json(
+        { error: 'title, platform, department, course_type, and course_url are required' },
+        { status: 400 }
+      );
+    }
+
+    const result = await query(
+      `
+      INSERT INTO courses (
+        title, description, instructor_name, platform, department, course_type,
+        price, original_price, discount_percentage, rating,
+        total_ratings, duration_hours, level, language,
+        thumbnail_url, course_url, tags, is_bestseller,
+        is_new, certificate_offered
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      RETURNING *
+      `,
+      [
+        title,
+        description || null,
+        user?.name || 'Admin',
+        platform,
+        department,
+        course_type,
+        price || 0,
+        original_price || null,
+        discount_percentage || 0,
+        rating || 0,
+        total_ratings || 0,
+        duration_hours || 0,
+        level || 'All Levels',
+        language || 'English',
+        thumbnail_url || null,
+        course_url,
+        Array.isArray(tags) ? tags : [],
+        Boolean(is_bestseller),
+        Boolean(is_new),
+        Boolean(certificate_offered),
+      ]
+    );
+
+    return NextResponse.json(result[0], { status: 201 });
+  } catch (err: any) {
+    console.error('Create course API error:', err);
+    return NextResponse.json(
+      { error: 'Failed to create course', details: err.message },
+      { status: 500 }
+    );
+  }
+}
+

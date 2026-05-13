@@ -1,11 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import { Sparkles } from "lucide-react";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#010030' }}>
-      {/* Left Panel — Branding */}
+      {/* Left Panel: Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden border-r border-purple-900/30">
         {/* Grid background */}
         <div className="absolute inset-0 opacity-5"
@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* Logo */}
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-3">
-            <img src="/favicon.png" alt="CertiFind" className="w-10 h-10 rounded-full border border-purple-500/30" />
+            <Image src="/favicon.png" alt="CertiFind" width={40} height={40} className="w-10 h-10 rounded-full border border-purple-500/30" />
             <span className="text-2xl font-black text-white tracking-tighter">
               Certi<span style={{ color: '#7226FF' }}>Find</span>
             </span>
@@ -48,17 +48,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Bottom */}
         <div className="relative z-10 text-white/30 text-xs">
-          © {new Date().getFullYear()} CertiFind. All rights reserved.
+          (c) {new Date().getFullYear()} CertiFind. All rights reserved.
         </div>
       </div>
 
-      {/* Right Panel — Form */}
+      {/* Right Panel: Form */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-8 lg:p-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="flex justify-center mb-8 lg:hidden">
             <Link href="/" className="flex items-center gap-2">
-              <img src="/favicon.png" alt="CertiFind" className="w-8 h-8 rounded-full" />
+              <Image src="/favicon.png" alt="CertiFind" width={32} height={32} className="w-8 h-8 rounded-full" />
               <span className="text-xl font-black text-white">Certi<span style={{ color: '#7226FF' }}>Find</span></span>
             </Link>
           </div>

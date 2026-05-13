@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, ArrowRight, Star, Clock, GraduationCap } from 'lucide-react';
+import { ArrowRight, Star, GraduationCap } from 'lucide-react';
 import PlatformBadge from './PlatformBadge';
 import Link from 'next/link';
 

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import * as Icons from 'lucide-react';
-import { Sparkles, Globe, Cpu, Layout, Lightbulb } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 const SPOTLIGHT_PLATFORMS = [
   { name: 'Coursera', category: 'Global', icon: 'GraduationCap' },

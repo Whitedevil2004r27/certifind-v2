@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 import { extractText } from 'unpdf';
+
+export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
@@ -17,30 +19,22 @@ export async function POST(request: Request) {
     const uint8Array = new Uint8Array(bytes);
     
     // Performance Optimization: Run PDF Parsing and Database Fetching in Parallel
-    const [extracted, { data: courses, error: dbError }] = await Promise.all([
+    const [extracted, courses] = await Promise.all([
       extractText(uint8Array).catch(err => {
         console.error('unpdf Parse Internal Error:', err.message);
         return null;
       }),
-      supabase
-        .from('courses')
-        .select(`
-          course_id, 
-          title, 
-          department, 
-          tags, 
-          rating, 
-          level, 
-          platforms (
-            name,
-            category
-          )
-        `)
+      query<any>(`
+        SELECT c.*, p.category as platform_category
+        FROM courses c
+        LEFT JOIN platforms p ON c.platform = p.name
+      `)
     ]);
     
-    if (dbError || !courses) {
-      throw dbError || new Error('No courses found in database');
+    if (!courses || courses.length === 0) {
+      throw new Error('No courses found in database');
     }
+
 
     if (!extracted || !extracted.text) {
       throw new Error('No text extracted from PDF. The file may be empty or encrypted.');

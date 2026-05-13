@@ -1,138 +1,123 @@
-'use client';
-import { useAuth } from '@/hooks/useAuth';
-import { useEffect, useState } from 'react';
-import { Loader2, User, Sparkles, Zap, Map, BookOpen, Clock, LogOut } from 'lucide-react';
-import Link from 'next/link';
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { BookMarked, Loader2, ShieldCheck, User, Zap } from "lucide-react";
+import RealtimeCourseModule from "@/components/courses/RealtimeCourseModule";
+
+type DashboardUser = {
+  email: string;
+  image?: string | null;
+  name: string;
+  provider: "clerk" | "legacy";
+  role: string;
+};
 
 export default function DashboardPage() {
-  const { getSession, getRole, logout } = useAuth();
-  const [session, setSession] = useState<any>(null);
-  const [role, setRole] = useState<string>('student');
+  const [user, setUser] = useState<DashboardUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function init() {
-      const sess = await getSession();
-      setSession(sess);
-      setRole(await getRole());
-      setLoading(false);
-    }
-    init();
-  }, [getSession, getRole]);
+    let mounted = true;
+
+    fetch("/api/me", { cache: "no-store" })
+      .then(async (response) => {
+        if (!mounted) return;
+        if (!response.ok) {
+          setUser(null);
+          return;
+        }
+
+        setUser(await response.json());
+      })
+      .catch(() => {
+        if (mounted) setUser(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin" style={{ color: '#7226FF' }} />
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-certifind-accent" />
       </div>
     );
   }
 
-  const name = session?.user?.user_metadata?.full_name || session?.user?.email?.split('@')[0] || 'Learner';
-  const roleColors = {
-    premium: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-    admin: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-    student: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  }[role] || 'text-white/50 bg-white/5 border-white/10';
+  if (!user) {
+    return (
+      <main className="flex min-h-[70vh] items-center justify-center px-4 py-12">
+        <div className="max-w-md rounded-[2rem] border border-white/10 bg-white/[0.045] p-8 text-center">
+          <ShieldCheck className="mx-auto mb-4 h-12 w-12 text-cyan-300" />
+          <h1 className="text-3xl font-black text-white">Dashboard locked</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-400">
+            Sign in to open your real-time course workspace and saved learning queue.
+          </p>
+          <Link href="/login?callbackUrl=/dashboard" className="mt-6 inline-flex rounded-full bg-white px-7 py-3 text-sm font-black text-black">
+            Sign in
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
-  const stats = [
-    { label: 'Courses Completed', val: '0', icon: CheckCircle, color: '#22c55e' },
-    { label: 'Learning Hours', val: '0', icon: Clock, color: '#eab308' },
-    { label: 'Saved Courses', val: '0', icon: Bookmark, color: '#7226FF' },
-  ];
-
-  function CheckCircle(props: any) { return <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>; }
-  function Bookmark(props: any) { return <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>; }
+  const roleClass = {
+    admin: "border-emerald-300/25 bg-emerald-300/10 text-emerald-200",
+    premium: "border-amber-300/25 bg-amber-300/10 text-amber-200",
+    student: "border-cyan-300/25 bg-cyan-300/10 text-cyan-200",
+  }[user.role] || "border-white/10 bg-white/[0.045] text-slate-300";
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-12 md:py-20">
-      {/* Header Profile Section */}
-      <div className="relative rounded-3xl overflow-hidden border border-white/10 p-8 sm:p-12" style={{ backgroundColor: '#010030' }}>
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/20 blur-[120px] rounded-full pointer-events-none translate-x-1/3 -translate-y-1/3" />
-        
-        <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          {/* Avatar */}
-          <div className="w-24 h-24 rounded-full border-2 border-white/10 overflow-hidden flex-shrink-0 bg-neutral-900">
-            {session?.user?.user_metadata?.avatar_url ? (
-              <img src={session.user.user_metadata.avatar_url} alt={name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-purple-900/50">
-                <User className="w-10 h-10 text-purple-400" />
+    <main className="min-h-screen px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
+      <div className="mx-auto max-w-[1500px] space-y-6">
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.045] p-6 sm:p-8">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-black/35">
+                {user.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.image} alt={user.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <User className="h-9 w-9 text-cyan-300" />
+                )}
               </div>
-            )}
-          </div>
-          
-          {/* Info */}
-          <div className="flex-1 text-center sm:text-left space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-black text-white">{name}</h1>
-            <p className="text-white/50">{session?.user?.email}</p>
-            <div className="pt-2 flex flex-wrap gap-2 justify-center sm:justify-start">
-              <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border ${roleColors}`}>
-                {role}
-              </span>
-              {role === 'student' && (
-                <Link href="/pricing" className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border border-amber-500/20 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-colors">
-                  Upgrade to Premium
-                </Link>
-              )}
-            </div>
-          </div>
-
-          <button onClick={logout} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-semibold text-white/70 hover:text-red-400 transition-colors">
-            <LogOut className="w-4 h-4" /> Sign out
-          </button>
-        </div>
-      </div>
-
-      {/* Grid Content */}
-      <div className="grid md:grid-cols-3 gap-6 mt-6">
-        {/* Left Column (Actions) */}
-        <div className="space-y-6 md:col-span-2">
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <Zap className="w-6 h-6 text-yellow-400" />
-              <h2 className="text-xl font-black text-white">Quick Actions</h2>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <Link href="/analyzer" className="p-5 rounded-2xl border border-white/5 bg-black/20 hover:bg-white/5 hover:border-purple-500/30 transition-all group">
-                <Sparkles className="w-6 h-6 text-purple-400 mb-3 group-hover:scale-110 transition-transform" />
-                <h3 className="font-bold text-white mb-1">AI Career Hub</h3>
-                <p className="text-xs text-white/40">Analyze your resume and find skill gaps.</p>
-              </Link>
-              <Link href="/" className="p-5 rounded-2xl border border-white/5 bg-black/20 hover:bg-white/5 hover:border-blue-500/30 transition-all group">
-                <BookOpen className="w-6 h-6 text-blue-400 mb-3 group-hover:scale-110 transition-transform" />
-                <h3 className="font-bold text-white mb-1">Explore Courses</h3>
-                <p className="text-xs text-white/40">Discover top-tier certifications.</p>
-              </Link>
-              {['admin', 'premium'].includes(role) && (
-                <Link href="/paid-courses" className="p-5 rounded-2xl border border-white/5 bg-black/20 hover:bg-white/5 hover:border-emerald-500/30 transition-all group">
-                  <Map className="w-6 h-6 text-emerald-400 mb-3 group-hover:scale-110 transition-transform" />
-                  <h3 className="font-bold text-white mb-1">Premium Perks</h3>
-                  <p className="text-xs text-white/40">Access exclusive paid guides & paths.</p>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (Stats) */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8">
-          <h2 className="text-lg font-black text-white mb-6 uppercase tracking-wider text-xs">Your Stats</h2>
-          <div className="space-y-4">
-            {stats.map(({ label, val, icon: Icon, color }) => (
-              <div key={label} className="bg-black/30 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5" style={{ color }}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <span className="text-sm font-semibold text-white/60">{label}</span>
+              <div className="min-w-0">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] ${roleClass}`}>
+                    {user.role}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                    {user.provider === "clerk" ? "Clerk auth" : "Local auth"}
+                  </span>
                 </div>
-                <span className="text-lg font-black text-white">{val}</span>
+                <h1 className="truncate text-3xl font-black text-white sm:text-4xl">{user.name}</h1>
+                <p className="mt-1 truncate text-sm text-slate-400">{user.email}</p>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <Link href="/bookmarks" className="rounded-[2rem] border border-rose-300/20 bg-rose-300/10 p-6 transition hover:bg-rose-300/15">
+              <BookMarked className="mb-4 h-6 w-6 text-rose-200" />
+              <h2 className="text-lg font-black text-white">Saved courses</h2>
+              <p className="mt-2 text-sm text-rose-100/60">Review your bookmarked modules.</p>
+            </Link>
+            <Link href="/analyzer" className="rounded-[2rem] border border-amber-300/20 bg-amber-300/10 p-6 transition hover:bg-amber-300/15">
+              <Zap className="mb-4 h-6 w-6 text-amber-200" />
+              <h2 className="text-lg font-black text-white">Career hub</h2>
+              <p className="mt-2 text-sm text-amber-100/60">Analyze skill gaps and next steps.</p>
+            </Link>
+          </div>
+        </section>
+
+        <RealtimeCourseModule variant="dashboard" signedInName={user.name.split(" ")[0] || user.name} />
       </div>
-    </div>
+    </main>
   );
 }

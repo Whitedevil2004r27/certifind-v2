@@ -2,62 +2,69 @@
 
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function BookmarkButton({ courseId }: { courseId: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const checkBookmark = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      try {
+        const response = await fetch(`/api/bookmarks?courseId=${encodeURIComponent(courseId)}`, {
+          signal: controller.signal,
+        });
+
+        if (response.status === 401) {
+          setIsBookmarked(false);
+          return;
+        }
+
+        if (!response.ok) return;
+
+        const status = await response.json();
+        setIsBookmarked(Boolean(status.isBookmarked));
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("Bookmark status failed:", error);
+        }
+      } finally {
         setLoading(false);
-        return;
       }
-      
-      setUser(session.user);
-      
-      const { data } = await supabase
-        .from('bookmarks')
-        .select('id')
-        .eq('course_id', courseId)
-        .eq('user_id', session.user.id)
-        .single();
-        
-      if (data) {
-        setIsBookmarked(true);
-      }
-      setLoading(false);
     };
-    
+
     checkBookmark();
+
+    return () => controller.abort();
   }, [courseId]);
 
   const toggleBookmark = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Don't trigger any parent links
-    
-    if (!user) {
-      alert("Please sign in to bookmark courses!");
-      return;
-    }
+    e.preventDefault();
 
-    // Optimistic UI
-    setIsBookmarked(!isBookmarked);
+    try {
+      const response = await fetch('/api/bookmarks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId }),
+      });
 
-    if (isBookmarked) {
-      await supabase
-        .from('bookmarks')
-        .delete()
-        .eq('course_id', courseId)
-        .eq('user_id', user.id);
-    } else {
-      await supabase
-        .from('bookmarks')
-        .insert({ course_id: courseId, user_id: user.id });
+      if (response.status === 401) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+        return;
+      }
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Bookmark toggle failed");
+      setIsBookmarked(result.isBookmarked);
+    } catch (err) {
+      console.error("Bookmark toggle failed:", err);
     }
   };
+
 
   if (loading) return null; // Don't show anything while calculating state
 

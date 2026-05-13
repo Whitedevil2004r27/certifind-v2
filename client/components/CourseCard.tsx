@@ -1,11 +1,10 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Star, Clock, BarChart, Bookmark, ExternalLink, Trophy } from 'lucide-react'
 import PlatformBadge from './PlatformBadge'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { usePathname, useRouter } from 'next/navigation'
 
 export interface Course {
   course_id: string
@@ -27,6 +26,8 @@ export interface Course {
   duration_hours?: number
   level: string
   thumbnail_url?: string
+  image_alt?: string
+  updated_at?: string
   course_url: string
   certificate_offered?: boolean
   is_bestseller?: boolean
@@ -39,53 +40,71 @@ interface CourseCardProps {
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => {
+
   const router = useRouter()
+  const pathname = usePathname()
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    const controller = new AbortController()
+
     const checkBookmark = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const { data } = await supabase
-          .from('bookmarks')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .eq('course_id', course.course_id)
-          .maybeSingle()
-        if (data) setIsBookmarked(true)
+      try {
+        const response = await fetch(`/api/bookmarks?courseId=${encodeURIComponent(course.course_id)}`, {
+          signal: controller.signal,
+        })
+
+        if (response.status === 401) {
+          setIsBookmarked(false)
+          return
+        }
+
+        if (!response.ok) return
+
+        const status = await response.json()
+        setIsBookmarked(Boolean(status.isBookmarked))
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("Bookmark status error:", error)
+        }
       }
     }
+
     checkBookmark()
+
+    return () => controller.abort()
   }, [course.course_id])
 
   const toggleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
-    setLoading(true)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) {
-      alert("Sign in to bookmark courses!")
-      setLoading(false)
-      return
-    }
 
-    if (isBookmarked) {
-      const { error } = await supabase.from('bookmarks').delete().eq('user_id', session.user.id).eq('course_id', course.course_id)
-      if (!error) {
-        setIsBookmarked(false)
-        onBookmarkToggle?.(course.course_id, false)
+    setLoading(true)
+    try {
+      const response = await fetch('/api/bookmarks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId: course.course_id }),
+      })
+
+      if (response.status === 401) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
+        return
       }
-    } else {
-      const { error } = await supabase.from('bookmarks').insert({ user_id: session.user.id, course_id: course.course_id })
-      if (!error) {
-        setIsBookmarked(true)
-        onBookmarkToggle?.(course.course_id, true)
-      }
+
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Bookmark update failed')
+
+      setIsBookmarked(result.isBookmarked)
+      onBookmarkToggle?.(course.course_id, result.isBookmarked)
+    } catch (err) {
+      console.error("Bookmark error:", err)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
+
 
   const ratingStars = Array.from({ length: 5 }, (_, i) => (
     <Star
@@ -94,6 +113,9 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
       className={i < Math.floor(course.rating) ? 'fill-amber-400 text-amber-400' : 'text-neutral-600'}
     />
   ))
+  const price = Number(course.price || 0)
+  const originalPrice = Number(course.original_price || 0)
+  const discountPercentage = Number(course.discount_percentage || 0)
 
   return (
     <div 
@@ -102,9 +124,11 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
     >
       {/* Thumbnail Area */}
       <div className="relative aspect-video overflow-hidden block">
-        <img
+        <Image
           src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop'}
-          alt={course.title}
+          alt={course.image_alt || course.title}
+          fill
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
         
@@ -177,17 +201,17 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
           <div className="flex flex-col">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-white">
-                {course.course_type === 'Free' ? 'FREE' : `$${course.price}`}
+                {course.course_type === 'Free' ? 'FREE' : `$${price}`}
               </span>
-              {course.original_price && course.original_price > course.price && (
+              {originalPrice > price && (
                 <span className="text-sm text-neutral-600 line-through">
-                  ${course.original_price}
+                  ${originalPrice}
                 </span>
               )}
             </div>
-            {course.discount_percentage && (
+            {discountPercentage > 0 && (
               <span className="text-[10px] font-bold text-certifind-accent uppercase tracking-widest">
-                Save {course.discount_percentage}%
+                Save {discountPercentage}%
               </span>
             )}
           </div>

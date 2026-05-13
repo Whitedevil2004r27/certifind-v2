@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Sparkles } from "lucide-react";
 
 export default function Footer() {
@@ -14,7 +15,7 @@ export default function Footer() {
           {/* Branding + tagline */}
           <div className="sm:col-span-1 space-y-3">
             <Link href="/" className="inline-flex items-center gap-2 group">
-              <img src="/favicon.png" alt="CertiFind" className="w-7 h-7 rounded-full" />
+              <Image src="/favicon.png" alt="CertiFind" width={28} height={28} className="w-7 h-7 rounded-full" />
               <span className="text-2xl font-black tracking-tighter text-white">
                 Certi<span className="text-blue-500">Find</span>
               </span>

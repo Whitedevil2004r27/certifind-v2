@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { Star, Clock, BarChart, Bookmark, ExternalLink, Trophy, ArrowLeft, Loader2, PlayCircle, Globe, ShieldCheck, Sparkles } from 'lucide-react';
 import PlatformBadge from '@/components/PlatformBadge';
 import Link from 'next/link';
@@ -11,54 +11,56 @@ import { Course } from '@/components/CourseCard';
 export default function CourseDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const courseId = Array.isArray(id) ? id[0] : id;
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      try {
+        if (!courseId) return;
 
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*, platforms(*)')
-        .eq('course_id', id)
-        .single();
-
-      if (data) {
-        setCourse(data);
-        // Check bookmark status
-        if (session?.user) {
-          const { data: bookmark } = await supabase
-            .from('bookmarks')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .eq('course_id', id)
-            .maybeSingle();
-          if (bookmark) setIsBookmarked(true);
+        const res = await fetch(`/api/courses/${courseId}`);
+        const data = await res.json();
+        if (data && !data.error) {
+          setCourse(data);
+          const bookmarkResponse = await fetch(`/api/bookmarks?courseId=${encodeURIComponent(courseId)}`);
+          if (bookmarkResponse.ok) {
+            const status = await bookmarkResponse.json();
+            setIsBookmarked(Boolean(status.isBookmarked));
+          }
         }
+      } catch (err) {
+        console.error("Failed to fetch course details:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     fetchData();
-  }, [id]);
+  }, [courseId]);
 
   const toggleBookmark = async () => {
-    if (!user) {
-      alert("Please sign in to bookmark courses!");
-      return;
-    }
+    try {
+      const response = await fetch('/api/bookmarks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId }),
+      });
 
-    if (isBookmarked) {
-      await supabase.from('bookmarks').delete().eq('user_id', user.id).eq('course_id', id);
-      setIsBookmarked(false);
-    } else {
-      await supabase.from('bookmarks').insert({ user_id: user.id, course_id: id });
-      setIsBookmarked(true);
+      if (response.status === 401) {
+        router.push(`/login?callbackUrl=${encodeURIComponent(`/courses/${courseId}`)}`);
+        return;
+      }
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Bookmark toggle failed");
+      setIsBookmarked(result.isBookmarked);
+    } catch (err) {
+      console.error("Bookmark toggle failed:", err);
     }
   };
+
 
   if (loading) return (
     <div className="flex h-screen items-center justify-center bg-[#010030]">
@@ -73,13 +75,25 @@ export default function CourseDetailPage() {
     </div>
   );
 
+  const courseImage = course.thumbnail_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop';
+  const price = Number(course.price || 0);
+  const originalPrice = Number(course.original_price || 0);
+  const discountPercentage = Number(course.discount_percentage || 0);
+
   return (
     <div className="min-h-screen bg-[#010030] text-white pb-20">
       
       {/* Hero Section */}
       <div className="relative h-[400px] md:h-[500px] w-full">
         <div className="absolute inset-0 z-0">
-          <img src={course.thumbnail_url || ""} alt={course.title} className="w-full h-full object-cover opacity-30" />
+          <Image
+            src={courseImage}
+            alt={course.image_alt || course.title}
+            fill
+            sizes="100vw"
+            priority
+            className="object-cover opacity-30"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-[#010030] via-[#010030]/80 to-transparent" />
         </div>
 
@@ -158,7 +172,7 @@ export default function CourseDetailPage() {
                 <p className="text-certifind-accent font-black uppercase text-xs tracking-[0.2em] mb-2">Verified Host Platform</p>
                 <h3 className="text-4xl font-black text-white mb-4">{course.platform}</h3>
                 <p className="text-neutral-300 leading-relaxed max-w-xl">
-                  This course is officially hosted and verified by **{course.platform}**. CertiFind partners with platforms in the **{course.platforms?.category || 'Global'}** learning ecosystem to ensure academic integrity and expert-led curriculum.
+                  This course is officially hosted and verified by <strong className="text-white">{course.platform}</strong>. CertiFind partners with platforms in the <strong className="text-white">{course.platforms?.category || 'Global'}</strong> learning ecosystem to ensure academic integrity and expert-led curriculum.
                 </p>
               </div>
             </div>
@@ -171,10 +185,10 @@ export default function CourseDetailPage() {
           <div className="bg-white/5 border border-white/10 rounded-3xl p-8 sticky top-28 shadow-2xl backdrop-blur-xl">
             <div className="mb-8">
               <div className="flex items-baseline gap-3 mb-1">
-                <span className="text-5xl font-black text-white">{course.course_type === 'Free' ? 'FREE' : `$${course.price}`}</span>
-                {course.original_price && <span className="text-lg text-neutral-500 line-through">${course.original_price}</span>}
+                <span className="text-5xl font-black text-white">{course.course_type === 'Free' ? 'FREE' : `$${price}`}</span>
+                {originalPrice > price && <span className="text-lg text-neutral-500 line-through">${originalPrice}</span>}
               </div>
-              {course.discount_percentage && <span className="text-emerald-400 font-bold text-sm uppercase tracking-widest">Limited Offer: Save {course.discount_percentage}%</span>}
+              {discountPercentage > 0 && <span className="text-emerald-400 font-bold text-sm uppercase tracking-widest">Limited Offer: Save {discountPercentage}%</span>}
             </div>
 
             <div className="space-y-4">

@@ -1,8 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  outputFileTracingRoot: __dirname,
   images: {
-    domains: ['img-c.udemycdn.com', 'd3njjcbhbojbot.cloudfront.net', 'media.licdn.com', 'loremflickr.com'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'img-c.udemycdn.com' },
+      { protocol: 'https', hostname: 'd3njjcbhbojbot.cloudfront.net' },
+      { protocol: 'https', hostname: 'media.licdn.com' },
+      { protocol: 'https', hostname: 'loremflickr.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'api.dicebear.com' },
+    ],
   },
   async headers() {
     return [

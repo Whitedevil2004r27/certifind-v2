@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Mail, Phone, MapPin, Globe, Linkedin, Github } from "lucide-react";
+import { CheckCircle2, Mail, Phone, MapPin, Globe, Linkedin } from "lucide-react";
 
 interface ResumeData {
   fullName: string;
