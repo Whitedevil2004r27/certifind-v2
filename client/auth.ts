@@ -7,16 +7,23 @@ import PostgresAdapter from "@auth/pg-adapter";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+let pool: Pool | null = null;
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not defined");
+function getPool() {
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is not defined");
+  }
+
+  if (!pool) {
+    pool = new Pool({
+      connectionString,
+      ssl: { rejectUnauthorized: false },
+    });
+  }
+
+  return pool;
 }
-
-const pool = new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false },
-});
 
 const providers: Provider[] = [
   Credentials({
@@ -30,7 +37,7 @@ const providers: Provider[] = [
       const email = String(credentials.email).trim().toLowerCase();
       const password = String(credentials.password);
 
-      const result = await pool.query(
+      const result = await getPool().query(
         "SELECT id, name, email, password, role FROM users WHERE lower(email) = $1",
         [email]
       );
@@ -71,7 +78,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PostgresAdapter(pool),
+  ...(connectionString ? { adapter: PostgresAdapter(getPool()) } : {}),
   providers,
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   trustHost: true,
@@ -83,14 +90,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if ((!token.id || !token.role) && token.email) {
-        const result = await pool.query(
-          "SELECT id, role FROM users WHERE lower(email) = $1",
-          [token.email.toLowerCase()]
-        );
-        const dbUser = result.rows[0];
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.role = dbUser.role ?? "student";
+        try {
+          const result = await getPool().query(
+            "SELECT id, role FROM users WHERE lower(email) = $1",
+            [token.email.toLowerCase()]
+          );
+          const dbUser = result.rows[0];
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.role = dbUser.role ?? "student";
+          }
+        } catch (error) {
+          console.warn("NextAuth JWT database lookup skipped:", error);
         }
       }
 
