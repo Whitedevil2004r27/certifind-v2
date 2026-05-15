@@ -20,6 +20,70 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+
+  .cinematic-scene {
+    transform-style: preserve-3d;
+  }
+
+  .cinematic-perspective {
+    perspective: 1400px;
+    transform-style: preserve-3d;
+  }
+
+  .cinematic-perspective > * {
+    transform-style: preserve-3d;
+  }
+
+  .certifind-story canvas {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  .cinematic-corridor::before,
+  .cinematic-corridor::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .cinematic-corridor::before {
+    background:
+      linear-gradient(90deg, transparent 0 46%, rgba(103, 232, 249, 0.16) 50%, transparent 54%),
+      repeating-linear-gradient(90deg, transparent 0 64px, rgba(103, 232, 249, 0.12) 65px, transparent 66px);
+    clip-path: polygon(18% 100%, 45% 0, 55% 0, 82% 100%);
+    opacity: 0.55;
+  }
+
+  .cinematic-corridor::after {
+    background: radial-gradient(ellipse at 50% 48%, transparent 0 34%, rgba(0, 0, 0, 0.78) 70%);
+  }
+
+  .growth-branch {
+    left: var(--branch-left);
+    rotate: var(--branch-rotate);
+    top: var(--branch-top);
+  }
+
+  .growth-label {
+    transform: translateX(-50%) rotate(var(--branch-counter-rotate));
+  }
+}
+
+@media (max-width: 640px) {
+  @layer utilities {
+    .growth-branch {
+      left: var(--branch-mobile-left);
+    }
+
+    .growth-label {
+      min-width: 5.75rem;
+      padding: 0.4rem 0.65rem;
+      font-size: 0.6875rem;
+      line-height: 1rem;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
