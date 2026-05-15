@@ -1,12 +1,34 @@
 import { neon } from '@neondatabase/serverless';
 
-const databaseUrl = process.env.DATABASE_URL;
+type NeonSqlClient = ReturnType<typeof neon>;
 
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL is not defined');
+let sqlClient: NeonSqlClient | null = null;
+let sqlClientUrl: string | null = null;
+
+function getDatabaseUrl() {
+  return process.env.DATABASE_URL || process.env.POSTGRES_URL;
 }
 
-export const sql = neon(databaseUrl);
+function getSqlClient() {
+  const databaseUrl = getDatabaseUrl();
+
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is not defined');
+  }
+
+  if (!sqlClient || sqlClientUrl !== databaseUrl) {
+    sqlClient = neon(databaseUrl);
+    sqlClientUrl = databaseUrl;
+  }
+
+  return sqlClient;
+}
+
+export const sql = {
+  query(text: string, params: unknown[] = []) {
+    return getSqlClient().query(text, params);
+  },
+};
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -23,7 +45,7 @@ export async function query<T = Record<string, unknown>>(
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      return (await sql.query(text, params)) as T[];
+      return (await getSqlClient().query(text, params)) as T[];
     } catch (error) {
       lastError = error;
       if (!isTransientDatabaseError(error) || attempt === 2) break;

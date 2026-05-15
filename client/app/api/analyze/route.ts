@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { fallbackCourses, withFallbackPlatform } from '@/lib/fallback-catalog';
 import { extractText } from 'unpdf';
 
 export const runtime = 'nodejs';
@@ -28,7 +29,10 @@ export async function POST(request: Request) {
         SELECT c.*, p.category as platform_category
         FROM courses c
         LEFT JOIN platforms p ON c.platform = p.name
-      `)
+      `).catch((err) => {
+        console.warn('Analyzer using cached catalog:', err?.message || err);
+        return fallbackCourses.map(withFallbackPlatform);
+      })
     ]);
     
     if (!courses || courses.length === 0) {
