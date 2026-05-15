@@ -23,6 +23,7 @@ type Platform = {
 };
 
 type LiveCourse = Pick<Course, "course_id" | "title" | "platform" | "course_type" | "rating" | "thumbnail_url" | "updated_at">;
+type DataSource = "neon" | "cached";
 
 type Props = {
   variant?: "dashboard" | "public";
@@ -91,6 +92,8 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
   const [refreshing, setRefreshing] = useState(false);
   const [streamState, setStreamState] = useState<"connecting" | "live" | "offline">("connecting");
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<DataSource>("neon");
+  const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState("");
 
   const hasFilters = Boolean(search.trim() || courseType !== "All" || platform !== "All" || level !== "All");
@@ -118,6 +121,8 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
 
       if (requestId !== requestRef.current) return;
       setCourses(data.courses || []);
+      setDataSource(data.source === "cached" ? "cached" : "neon");
+      setStatusMessage(data.warning || "");
     } catch (err) {
       if (requestId !== requestRef.current) return;
       const message = err instanceof Error ? err.message : "Courses could not be loaded";
@@ -166,19 +171,25 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
       const payload = JSON.parse((event as MessageEvent).data) as {
         courses?: LiveCourse[];
         lastSynced?: string;
+        source?: DataSource;
+        warning?: string;
       };
 
       setStreamState("live");
       setLastSynced(payload.lastSynced || new Date().toISOString());
       setLiveCourses(payload.courses || []);
+      setDataSource(payload.source === "cached" ? "cached" : "neon");
+      setStatusMessage(payload.warning || "");
 
       if (!hasFilters && sort === "updated") {
         fetchCourses(true);
       }
     });
 
-    source.addEventListener("stream-error", () => {
-      setStreamState("offline");
+    source.addEventListener("stream-warning", (event) => {
+      const payload = JSON.parse((event as MessageEvent).data) as { message?: string };
+      setStreamState("live");
+      setStatusMessage(payload.message || "Neon is temporarily unavailable. Showing cached updates.");
     });
 
     source.onerror = () => {
@@ -217,8 +228,14 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
         <div className="max-w-3xl">
           <div className="mb-4 flex flex-wrap items-center gap-3 text-xs font-black uppercase tracking-[0.18em] text-cyan-200/80">
             <span className="inline-flex items-center gap-2">
-              <Signal className={`h-4 w-4 ${streamState === "live" ? "text-emerald-300" : "text-amber-300"}`} />
-              {streamState === "live" ? "Live sync" : streamState === "connecting" ? "Connecting" : "Reconnecting"}
+              <Signal className={`h-4 w-4 ${streamState === "live" && dataSource === "neon" ? "text-emerald-300" : "text-amber-300"}`} />
+              {streamState === "live" && dataSource === "cached"
+                ? "Cached live feed"
+                : streamState === "live"
+                  ? "Live sync"
+                  : streamState === "connecting"
+                    ? "Connecting"
+                    : "Reconnecting"}
             </span>
             <span className="text-white/20">/</span>
             <span>{variant === "dashboard" ? "Course operations" : "Course command center"}</span>
@@ -233,7 +250,7 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:w-[520px]">
           {[
-            { label: "Live feed", value: liveCourses.length || 0, icon: Activity, color: "text-emerald-300" },
+            { label: dataSource === "cached" ? "Cached feed" : "Live feed", value: liveCourses.length || 0, icon: Activity, color: dataSource === "cached" ? "text-amber-300" : "text-emerald-300" },
             { label: "Visible", value: courses.length, icon: BookOpen, color: "text-cyan-300" },
             { label: "Secured", value: "Clerk", icon: ShieldCheck, color: "text-amber-300" },
           ].map(({ label, value, icon: Icon, color }) => (
@@ -331,11 +348,17 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
         <div className="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
           <span className="inline-flex items-center gap-2">
             <Database className="h-4 w-4 text-emerald-300" />
-            Neon synced
+            {dataSource === "cached" ? "Cached catalog" : "Neon synced"}
           </span>
           <span>{lastSynced ? `Updated ${formatTime(lastSynced)}` : "Waiting for first sync"}</span>
         </div>
       </div>
+
+      {statusMessage && (
+        <div className="mb-5 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm font-semibold text-amber-100/80">
+          {statusMessage}
+        </div>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
@@ -376,9 +399,11 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-black text-white">Live updates</h2>
-              <p className="text-xs font-semibold text-slate-500">Newest Neon course changes</p>
+              <p className="text-xs font-semibold text-slate-500">
+                {dataSource === "cached" ? "Cached course changes" : "Newest Neon course changes"}
+              </p>
             </div>
-            <span className={`h-3 w-3 rounded-full ${streamState === "live" ? "bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.8)]" : "bg-amber-300"}`} />
+            <span className={`h-3 w-3 rounded-full ${streamState === "live" && dataSource === "neon" ? "bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.8)]" : "bg-amber-300 shadow-[0_0_16px_rgba(252,211,77,0.55)]"}`} />
           </div>
 
           <div className="space-y-3">
