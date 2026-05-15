@@ -69,10 +69,46 @@
   .growth-label {
     transform: translateX(-50%) rotate(var(--branch-counter-rotate));
   }
+
+  .certificate-card {
+    transform: translate(-50%, -50%) rotate(var(--cert-angle)) translateY(-5rem) rotate(var(--cert-counter-angle));
+  }
+
+  .roadmap-node {
+    left: var(--road-x);
+    top: var(--road-y);
+  }
+}
+
+@media (min-width: 640px) {
+  @layer utilities {
+    .certificate-card {
+      transform: translate(-50%, -50%) rotate(var(--cert-angle)) translateY(-9.75rem) rotate(var(--cert-counter-angle));
+    }
+  }
+}
+
+@media (min-width: 1024px) {
+  @layer utilities {
+    .certificate-card {
+      transform: translate(-50%, -50%) rotate(var(--cert-angle)) translateY(-10.625rem) rotate(var(--cert-counter-angle));
+    }
+  }
 }
 
 @media (max-width: 640px) {
   @layer utilities {
+    .certificate-card {
+      left: var(--cert-mobile-left);
+      top: var(--cert-mobile-top);
+      transform: translate(-50%, -50%);
+    }
+
+    .roadmap-node {
+      left: var(--road-mobile-x);
+      top: var(--road-mobile-y);
+    }
+
     .growth-branch {
       left: var(--branch-mobile-left);
     }

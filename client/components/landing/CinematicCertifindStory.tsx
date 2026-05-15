@@ -34,12 +34,19 @@ const courseCards = [
 ];
 
 const certificates = ["Frontend", "Data", "Cloud", "AI", "Product"];
+const mobileCertificatePositions = [
+  { left: "50%", top: "16%" },
+  { left: "74%", top: "36%" },
+  { left: "68%", top: "70%" },
+  { left: "32%", top: "70%" },
+  { left: "26%", top: "36%" },
+];
 
 const roadmapNodes = [
-  { role: "Frontend Developer", x: "10%", y: "28%", tone: "cyan" },
-  { role: "Data Analyst", x: "58%", y: "18%", tone: "violet" },
-  { role: "Cloud Engineer", x: "72%", y: "58%", tone: "gold" },
-  { role: "AI Engineer", x: "24%", y: "70%", tone: "cyan" },
+  { role: "Frontend Developer", x: "10%", y: "28%", mobileX: "7%", mobileY: "24%", tone: "cyan" },
+  { role: "Data Analyst", x: "58%", y: "18%", mobileX: "50%", mobileY: "18%", tone: "violet" },
+  { role: "Cloud Engineer", x: "72%", y: "58%", mobileX: "50%", mobileY: "58%", tone: "gold" },
+  { role: "AI Engineer", x: "24%", y: "70%", mobileX: "8%", mobileY: "68%", tone: "cyan" },
 ];
 
 const achievements = ["React verified", "Python certified", "Cloud ready", "AI portfolio"];
@@ -51,6 +58,18 @@ const growthBranches = [
   { label: "Jobs", top: "46%", left: "68%", mobileLeft: "64%", mobileTop: "48%", rotate: "56deg" },
   { label: "Growth", top: "67%", left: "52%", mobileLeft: "52%", mobileTop: "61%", rotate: "18deg" },
 ];
+
+const sceneShell =
+  "cinematic-scene relative isolate grid min-h-screen items-center overflow-hidden px-6 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24 xl:px-14";
+const sceneContainer = "mx-auto grid w-full max-w-[1360px] items-center gap-10 lg:gap-12";
+const sceneLabel =
+  "text-xs font-semibold uppercase tracking-tight sm:text-sm";
+const heroHeading =
+  "max-w-3xl text-4xl font-black leading-tight tracking-tight text-white [text-wrap:balance] sm:text-5xl lg:text-6xl";
+const sectionHeading =
+  "mt-4 max-w-3xl text-2xl font-black leading-tight tracking-tight text-white [text-wrap:balance] sm:text-3xl lg:text-4xl";
+const sceneParagraph =
+  "mt-5 max-w-3xl text-sm leading-relaxed text-white/60 sm:text-base lg:text-lg";
 
 function VoidParticles() {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -179,23 +198,30 @@ function CourseTile({ title, meta, icon: Icon, tone }: (typeof courseCards)[numb
 }
 
 function CertificateCard({ label, index }: { label: string; index: number }) {
+  const mobilePosition = mobileCertificatePositions[index] ?? mobileCertificatePositions[0];
+
   return (
     <div
       data-certificate
       data-hoverable
-      className="absolute left-1/2 top-1/2 h-36 w-56 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-yellow-200/40 bg-[linear-gradient(135deg,rgba(247,215,116,0.18),rgba(255,255,255,0.04))] p-5 text-yellow-50 shadow-[0_0_70px_rgba(247,215,116,0.18)] backdrop-blur-xl transition duration-700 hover:scale-105"
-      style={{
-        transform: `translate(-50%, -50%) rotate(${index * 72}deg) translateY(-170px) rotate(${-index * 72}deg)`,
-      }}
+      className="certificate-card absolute left-1/2 top-1/2 h-20 w-24 rounded-2xl border border-yellow-200/40 bg-[linear-gradient(135deg,rgba(247,215,116,0.18),rgba(255,255,255,0.04))] p-2.5 text-yellow-50 shadow-[0_0_42px_rgba(247,215,116,0.14)] backdrop-blur-xl transition duration-700 hover:scale-105 sm:h-32 sm:w-48 sm:p-5 lg:h-36 lg:w-56 lg:shadow-[0_0_70px_rgba(247,215,116,0.18)]"
+      style={
+        {
+          "--cert-angle": `${index * 72}deg`,
+          "--cert-counter-angle": `${-index * 72}deg`,
+          "--cert-mobile-left": mobilePosition.left,
+          "--cert-mobile-top": mobilePosition.top,
+        } as CSSProperties
+      }
     >
-      <Award className="h-8 w-8 text-yellow-200" />
-      <p className="mt-8 text-xs uppercase text-yellow-100/70">Verified path</p>
-      <h3 className="mt-1 text-2xl font-black text-white">{label}</h3>
+      <Award className="h-4 w-4 text-yellow-200 sm:h-7 sm:w-7 lg:h-8 lg:w-8" />
+      <p className="mt-3 text-[9px] uppercase leading-none text-yellow-100/70 sm:mt-6 sm:text-xs lg:mt-8">Verified path</p>
+      <h3 className="mt-1 text-sm font-black tracking-tight text-white sm:text-xl lg:text-2xl">{label}</h3>
     </div>
   );
 }
 
-function RoadmapNode({ role, x, y, tone }: (typeof roadmapNodes)[number]) {
+function RoadmapNode({ role, x, y, mobileX, mobileY, tone }: (typeof roadmapNodes)[number]) {
   const toneClass =
     tone === "gold"
       ? "border-yellow-300/40 bg-yellow-300/[0.12] shadow-[0_0_52px_rgba(247,215,116,0.22)]"
@@ -207,10 +233,17 @@ function RoadmapNode({ role, x, y, tone }: (typeof roadmapNodes)[number]) {
     <div
       data-road-node
       data-hoverable
-      className={`absolute min-w-44 rounded-2xl border p-4 text-sm font-black text-white backdrop-blur-2xl transition duration-700 hover:-translate-y-1 ${toneClass}`}
-      style={{ left: x, top: y }}
+      className={`roadmap-node absolute max-w-[8.75rem] rounded-2xl border p-3 text-xs font-black leading-snug text-white backdrop-blur-2xl transition duration-700 hover:-translate-y-1 sm:min-w-44 sm:max-w-none sm:p-4 sm:text-sm ${toneClass}`}
+      style={
+        {
+          "--road-x": x,
+          "--road-y": y,
+          "--road-mobile-x": mobileX,
+          "--road-mobile-y": mobileY,
+        } as CSSProperties
+      }
     >
-      <Compass className="mb-4 h-5 w-5 text-cyan-200" />
+      <Compass className="mb-3 h-4 w-4 text-cyan-200 sm:mb-4 sm:h-5 sm:w-5" />
       {role}
     </div>
   );
@@ -452,26 +485,26 @@ export default function CinematicCertifindStory() {
         aria-hidden="true"
       />
 
-      <section data-scene="void" className="cinematic-scene relative isolate flex min-h-[calc(100svh-4rem)] items-center overflow-hidden px-5 py-20 sm:px-8 lg:min-h-[calc(100svh-5rem)] lg:px-14">
+      <section data-scene="void" className="cinematic-scene relative isolate flex min-h-[calc(100svh-4rem)] items-center overflow-hidden px-6 py-16 sm:px-8 sm:py-20 lg:min-h-[calc(100svh-5rem)] lg:px-10 xl:px-14">
         <VoidParticles />
         <div className="absolute inset-0 -z-20 bg-black" />
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black to-transparent" aria-hidden="true" />
 
-        <div className="mx-auto grid w-full max-w-[1440px] items-end gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,0.55fr)]">
-          <div>
-            <p data-reveal className="mb-6 text-sm font-semibold uppercase text-cyan-200/[0.78]">
+        <div className="mx-auto grid w-full max-w-[1360px] items-end gap-8 md:gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(340px,0.52fr)] lg:gap-12">
+          <div className="max-w-3xl">
+            <p data-reveal className={`${sceneLabel} mb-4 text-cyan-200/[0.78]`}>
               CertiFind — From Learning to Legacy
             </p>
-            <h1 data-reveal className="max-w-5xl text-5xl font-black leading-[0.92] text-white sm:text-7xl lg:text-8xl">
+            <h1 data-reveal className={heroHeading}>
               Every career begins in darkness — with one question: where do I start?
             </h1>
           </div>
 
-          <div data-reveal data-parallax-slow className="relative rounded-[2rem] border border-white/[0.12] bg-white/[0.03] p-6 shadow-[0_0_120px_rgba(103,232,249,0.08)] backdrop-blur-xl">
+          <div data-reveal data-parallax-slow className="relative max-w-md rounded-[1.5rem] border border-white/[0.12] bg-white/[0.03] p-5 shadow-[0_0_80px_rgba(103,232,249,0.08)] backdrop-blur-xl sm:p-6 lg:justify-self-end">
             <div className="absolute -inset-px rounded-[2rem] bg-[radial-gradient(circle_at_20%_0%,rgba(103,232,249,0.24),transparent_42%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.20),transparent_45%)] opacity-70" aria-hidden="true" />
             <div className="relative">
               <p className="text-sm text-white/[0.54]">The first signal</p>
-              <p className="mt-6 text-3xl font-black leading-tight text-white sm:text-4xl">CertiFind turns confusion into direction.</p>
+              <p className="mt-4 text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl">CertiFind turns confusion into direction.</p>
               <Link
                 data-hoverable
                 href="#story-begins"
@@ -485,30 +518,30 @@ export default function CinematicCertifindStory() {
         </div>
       </section>
 
-      <section id="story-begins" data-scene="code" className="cinematic-scene relative isolate grid min-h-screen items-center overflow-hidden px-5 py-24 sm:px-8 lg:px-14">
+      <section id="story-begins" data-scene="code" className={sceneShell}>
         <div className="absolute inset-0 -z-20 bg-black" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_70%_38%,rgba(103,232,249,0.16),transparent_32%),radial-gradient(circle_at_18%_72%,rgba(139,92,246,0.15),transparent_34%)]" aria-hidden="true" />
 
-        <div className="mx-auto grid w-full max-w-[1440px] items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
-          <div>
+        <div className={`${sceneContainer} lg:grid-cols-[0.9fr_1.1fr]`}>
+          <div className="max-w-3xl">
             <p data-reveal className="text-sm font-semibold uppercase text-cyan-200/[0.76]">Scene Two</p>
-            <h2 data-reveal className="mt-5 max-w-2xl text-4xl font-black leading-none text-white sm:text-6xl lg:text-7xl">
+            <h2 data-reveal className={sectionHeading}>
               From scattered skills, a path begins to form.
             </h2>
-            <p data-reveal className="mt-7 max-w-xl text-lg leading-8 text-white/60">
+            <p data-reveal className={sceneParagraph}>
               Code fragments resolve into real course tiles, shaped around the skills that move a learner forward.
             </p>
           </div>
 
-          <div data-expand-frame className="cinematic-perspective relative min-h-[620px] rounded-[2.5rem] border border-white/10 bg-white/[0.025] p-5 shadow-[0_0_130px_rgba(103,232,249,0.07)] sm:p-8">
+          <div data-expand-frame className="cinematic-perspective relative min-h-[460px] rounded-[2rem] border border-white/10 bg-white/[0.025] p-4 shadow-[0_0_95px_rgba(103,232,249,0.07)] sm:min-h-[540px] sm:p-6 lg:min-h-[620px] lg:rounded-[2.5rem] lg:p-8">
             <div className="absolute inset-0 rounded-[inherit] bg-[linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%),radial-gradient(circle_at_70%_20%,rgba(103,232,249,0.18),transparent_28%)]" aria-hidden="true" />
-            <div className="relative grid h-full min-h-[560px] gap-5 lg:grid-cols-[0.8fr_1fr]">
-              <div className="relative min-h-64 rounded-[2rem] border border-cyan-200/10 bg-black/[0.42] p-5">
+            <div className="relative grid h-full min-h-[420px] gap-5 md:min-h-[500px] lg:min-h-[560px] lg:grid-cols-[0.8fr_1fr]">
+              <div className="relative min-h-56 rounded-[1.5rem] border border-cyan-200/10 bg-black/[0.42] p-4 sm:min-h-64 sm:rounded-[2rem] sm:p-5">
                 {codeFragments.map((fragment, index) => (
                   <div
                     key={fragment}
                     data-code-token
-                    className="absolute rounded-xl border border-cyan-200/[0.22] bg-cyan-200/[0.08] px-4 py-3 font-mono text-sm font-bold text-cyan-100 shadow-[0_0_36px_rgba(103,232,249,0.16)]"
+                    className="absolute rounded-xl border border-cyan-200/[0.22] bg-cyan-200/[0.08] px-3 py-2 font-mono text-xs font-bold text-cyan-100 shadow-[0_0_32px_rgba(103,232,249,0.14)] sm:px-4 sm:py-3 sm:text-sm"
                     style={{
                       left: `${10 + ((index * 29) % 66)}%`,
                       top: `${12 + ((index * 23) % 66)}%`,
@@ -530,57 +563,57 @@ export default function CinematicCertifindStory() {
         </div>
       </section>
 
-      <section data-scene="certificates" className="cinematic-scene relative isolate grid min-h-screen items-center overflow-hidden px-5 py-24 sm:px-8 lg:px-14">
+      <section data-scene="certificates" className={sceneShell}>
         <div className="absolute inset-0 -z-20 bg-black" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_50%,rgba(247,215,116,0.14),transparent_34%),radial-gradient(circle_at_20%_20%,rgba(139,92,246,0.13),transparent_32%)]" aria-hidden="true" />
 
-        <div className="mx-auto grid w-full max-w-[1440px] items-center gap-12 lg:grid-cols-[1.05fr_0.8fr]">
-          <div data-parallax-slow className="cinematic-perspective relative min-h-[620px] rounded-[2.75rem] border border-yellow-200/[0.12] bg-white/[0.025]">
-            <div data-orbit-ring className="absolute left-1/2 top-1/2 h-[440px] w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-yellow-200/[0.18] shadow-[0_0_80px_rgba(247,215,116,0.08)]" />
+        <div className={`${sceneContainer} lg:grid-cols-[1.05fr_0.8fr]`}>
+          <div data-parallax-slow className="cinematic-perspective relative min-h-[460px] overflow-hidden rounded-[2rem] border border-yellow-200/[0.12] bg-white/[0.025] sm:min-h-[540px] lg:min-h-[620px] lg:rounded-[2.75rem]">
+            <div data-orbit-ring className="absolute left-1/2 top-1/2 h-[290px] w-[290px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-yellow-200/[0.18] shadow-[0_0_70px_rgba(247,215,116,0.08)] sm:h-[360px] sm:w-[360px] lg:h-[440px] lg:w-[440px]" />
             {certificates.map((certificate, index) => (
               <CertificateCard key={certificate} label={certificate} index={index} />
             ))}
-            <div className="absolute left-1/2 top-1/2 grid h-40 w-40 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-cyan-200/30 bg-black shadow-[0_0_70px_rgba(103,232,249,0.18)]">
-              <GraduationCap className="h-14 w-14 text-cyan-100" />
+            <div className="absolute left-1/2 top-1/2 grid h-28 w-28 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-cyan-200/30 bg-black shadow-[0_0_60px_rgba(103,232,249,0.18)] sm:h-32 sm:w-32 lg:h-40 lg:w-40">
+              <GraduationCap className="h-10 w-10 text-cyan-100 sm:h-12 sm:w-12 lg:h-14 lg:w-14" />
             </div>
           </div>
 
-          <div>
+          <div className="max-w-3xl">
             <p data-reveal className="text-sm font-semibold uppercase text-yellow-100/[0.76]">Scene Three</p>
-            <h2 data-reveal className="mt-5 max-w-2xl text-4xl font-black leading-none text-white sm:text-6xl lg:text-7xl">
+            <h2 data-reveal className={sectionHeading}>
               Every lesson becomes proof. Every certificate becomes power.
             </h2>
-            <p data-reveal className="mt-7 max-w-xl text-lg leading-8 text-white/60">
+            <p data-reveal className={sceneParagraph}>
               Course cards move into orbit, then ignite into credentials a learner can carry into the next chapter.
             </p>
           </div>
         </div>
       </section>
 
-      <section data-scene="roadmap" className="cinematic-scene relative isolate grid min-h-screen items-center overflow-hidden px-5 py-24 sm:px-8 lg:px-14">
+      <section data-scene="roadmap" className={sceneShell}>
         <div className="absolute inset-0 -z-20 bg-black" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_65%_48%,rgba(103,232,249,0.14),transparent_36%),linear-gradient(180deg,rgba(139,92,246,0.08),transparent_45%)]" aria-hidden="true" />
 
-        <div className="mx-auto grid w-full max-w-[1440px] items-center gap-12 lg:grid-cols-[0.78fr_1.12fr]">
-          <div>
+        <div className={`${sceneContainer} lg:grid-cols-[0.78fr_1.12fr]`}>
+          <div className="max-w-3xl">
             <p data-reveal className="text-sm font-semibold uppercase text-cyan-200/[0.76]">Scene Four</p>
-            <h2 data-reveal className="mt-5 max-w-2xl text-4xl font-black leading-none text-white sm:text-6xl lg:text-7xl">
+            <h2 data-reveal className={sectionHeading}>
               CertiFind does not just show courses. It reveals your next direction.
             </h2>
-            <p data-reveal className="mt-7 max-w-xl text-lg leading-8 text-white/60">
+            <p data-reveal className={sceneParagraph}>
               Certificates connect into roadmaps for roles that once felt distant, abstract, or hidden.
             </p>
           </div>
 
-          <div data-parallax-deep className="relative min-h-[620px] rounded-[2.75rem] border border-white/10 bg-white/[0.025] p-6 shadow-[0_0_130px_rgba(139,92,246,0.08)]">
+          <div data-parallax-deep className="relative min-h-[460px] overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.025] p-4 shadow-[0_0_95px_rgba(139,92,246,0.08)] sm:min-h-[540px] sm:p-6 lg:min-h-[620px] lg:rounded-[2.75rem]">
             <svg className="absolute inset-0 h-full w-full text-cyan-200/[0.26]" viewBox="0 0 900 620" aria-hidden="true">
               <path data-road-line d="M120 210 C270 130 420 130 540 168" stroke="currentColor" strokeWidth="2" fill="none" />
               <path data-road-line d="M545 168 C670 240 710 300 724 358" stroke="currentColor" strokeWidth="2" fill="none" />
               <path data-road-line d="M722 360 C560 430 420 444 272 438" stroke="currentColor" strokeWidth="2" fill="none" />
               <path data-road-line d="M272 438 C210 360 154 296 120 210" stroke="currentColor" strokeWidth="2" fill="none" />
             </svg>
-            <div className="absolute left-1/2 top-1/2 grid h-28 w-28 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/[0.18] bg-black shadow-[0_0_70px_rgba(103,232,249,0.18)]">
-              <Orbit className="h-10 w-10 text-cyan-100" />
+            <div className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/[0.18] bg-black shadow-[0_0_58px_rgba(103,232,249,0.18)] sm:h-24 sm:w-24 lg:h-28 lg:w-28">
+              <Orbit className="h-7 w-7 text-cyan-100 sm:h-9 sm:w-9 lg:h-10 lg:w-10" />
             </div>
             {roadmapNodes.map((node) => (
               <RoadmapNode key={node.role} {...node} />
@@ -589,12 +622,12 @@ export default function CinematicCertifindStory() {
         </div>
       </section>
 
-      <section data-scene="corridor" className="cinematic-scene relative isolate grid min-h-screen items-center overflow-hidden px-5 py-24 sm:px-8 lg:px-14">
+      <section data-scene="corridor" className={sceneShell}>
         <div className="absolute inset-0 -z-20 bg-black" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_50%_0%,rgba(103,232,249,0.16),transparent_28%),linear-gradient(180deg,transparent,rgba(139,92,246,0.08)_70%,transparent)]" aria-hidden="true" />
 
-        <div className="mx-auto grid w-full max-w-[1440px] items-center gap-12 lg:grid-cols-[1.05fr_0.8fr]">
-          <div data-parallax-slow className="cinematic-corridor cinematic-perspective relative min-h-[640px] overflow-hidden rounded-[2.75rem] border border-cyan-200/10 bg-black shadow-[0_0_130px_rgba(103,232,249,0.07)]">
+        <div className={`${sceneContainer} lg:grid-cols-[1.05fr_0.8fr]`}>
+          <div data-parallax-slow className="cinematic-corridor cinematic-perspective relative min-h-[480px] overflow-hidden rounded-[2rem] border border-cyan-200/10 bg-black shadow-[0_0_95px_rgba(103,232,249,0.07)] sm:min-h-[560px] lg:min-h-[640px] lg:rounded-[2.75rem]">
             <div className="absolute inset-x-[16%] bottom-0 top-14 bg-[linear-gradient(90deg,transparent,rgba(103,232,249,0.10),transparent)]" aria-hidden="true" />
             {[0, 1, 2, 3, 4].map((panel) => (
               <div
@@ -605,8 +638,8 @@ export default function CinematicCertifindStory() {
               />
             ))}
             <div className="absolute bottom-20 left-1/2 flex -translate-x-1/2 flex-col items-center">
-              <div className="grid h-24 w-24 place-items-center rounded-full border border-cyan-200/[0.36] bg-cyan-200/10 shadow-[0_0_80px_rgba(103,232,249,0.25)]">
-                <User className="h-10 w-10 text-cyan-100" />
+              <div className="grid h-20 w-20 place-items-center rounded-full border border-cyan-200/[0.36] bg-cyan-200/10 shadow-[0_0_70px_rgba(103,232,249,0.25)] sm:h-24 sm:w-24">
+                <User className="h-8 w-8 text-cyan-100 sm:h-10 sm:w-10" />
               </div>
               <div className="mt-4 h-32 w-1 rounded-full bg-gradient-to-b from-cyan-200 to-transparent" />
             </div>
@@ -619,29 +652,29 @@ export default function CinematicCertifindStory() {
             </div>
           </div>
 
-          <div>
+          <div className="max-w-3xl">
             <p data-reveal className="text-sm font-semibold uppercase text-violet-200/[0.76]">Scene Five</p>
-            <h2 data-reveal className="mt-5 max-w-2xl text-5xl font-black leading-none text-white sm:text-7xl lg:text-8xl">
+            <h2 data-reveal className={sectionHeading}>
               Learn. Prove. Rise.
             </h2>
-            <p data-reveal className="mt-7 max-w-xl text-lg leading-8 text-white/60">
+            <p data-reveal className={sceneParagraph}>
               A learner moves forward through a black futuristic corridor while every completed milestone lights the path behind them.
             </p>
           </div>
         </div>
       </section>
 
-      <section data-scene="tree" className="cinematic-scene relative isolate grid min-h-screen items-center overflow-hidden px-5 py-24 sm:px-8 lg:px-14">
+      <section data-scene="tree" className={sceneShell}>
         <div className="absolute inset-0 -z-20 bg-black" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_48%,rgba(103,232,249,0.15),transparent_32%),radial-gradient(circle_at_52%_58%,rgba(247,215,116,0.10),transparent_38%)]" aria-hidden="true" />
 
-        <div className="mx-auto grid w-full max-w-[1440px] items-center gap-12 lg:grid-cols-[0.82fr_1fr]">
-          <div>
+        <div className={`${sceneContainer} lg:grid-cols-[0.82fr_1fr]`}>
+          <div className="max-w-3xl">
             <p data-reveal className="text-sm font-semibold uppercase text-cyan-200/[0.76]">The Harvest</p>
-            <h2 data-reveal className="mt-5 max-w-2xl text-5xl font-black leading-none text-white sm:text-7xl lg:text-8xl">
+            <h2 data-reveal className={sectionHeading}>
               Your future is not found. It is built.
             </h2>
-            <p data-reveal className="mt-7 max-w-xl text-lg leading-8 text-white/60">
+            <p data-reveal className={sceneParagraph}>
               The roadmap becomes a living system of skills, certifications, projects, jobs, and growth.
             </p>
             <div data-reveal className="mt-9 flex flex-col gap-3 sm:flex-row">
