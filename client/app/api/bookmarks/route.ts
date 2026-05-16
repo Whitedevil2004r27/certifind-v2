@@ -7,9 +7,14 @@ export const runtime = 'nodejs';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const courseId = searchParams.get('courseId');
+  const courseIdsParam = searchParams.get('courseIds');
   const user = await getAppUser();
 
   if (!user) {
+    if (courseIdsParam) {
+      return NextResponse.json({ bookmarkedCourseIds: [], authenticated: false });
+    }
+
     if (courseId) {
       return NextResponse.json({ isBookmarked: false, authenticated: false });
     }
@@ -18,6 +23,29 @@ export async function GET(request: Request) {
   }
 
   try {
+    if (courseIdsParam) {
+      const courseIds = Array.from(
+        new Set(
+          courseIdsParam
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean)
+        )
+      ).slice(0, 60);
+
+      if (courseIds.length === 0) {
+        return NextResponse.json({ bookmarkedCourseIds: [] });
+      }
+
+      const placeholders = courseIds.map((_, index) => `$${index + 2}`).join(', ');
+      const rows = await query<{ course_id: string }>(
+        `SELECT course_id FROM bookmarks WHERE user_id = $1 AND course_id IN (${placeholders})`,
+        [user.id, ...courseIds]
+      );
+
+      return NextResponse.json({ bookmarkedCourseIds: rows.map((row) => row.course_id) });
+    }
+
     if (courseId) {
       const bookmark = await query<{ id: string }>(
         'SELECT id FROM bookmarks WHERE user_id = $1 AND course_id = $2 LIMIT 1',

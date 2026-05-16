@@ -1,8 +1,36 @@
 import { NextResponse } from 'next/server';
+import { unstable_cache } from 'next/cache';
 import { query } from '@/lib/db';
 import { getFallbackCourseById } from '@/lib/fallback-catalog';
 
 export const runtime = 'nodejs';
+
+const COURSE_DETAIL_COLUMNS = `
+  c.course_id,
+  c.title,
+  c.description,
+  c.instructor_name,
+  c.platform,
+  c.department,
+  c.course_type,
+  c.price,
+  c.original_price,
+  c.discount_percentage,
+  c.rating,
+  c.total_ratings,
+  c.duration_hours,
+  c.level,
+  c.language,
+  c.thumbnail_url,
+  c.image_alt,
+  c.course_url,
+  c.tags,
+  c.is_bestseller,
+  c.is_new,
+  c.certificate_offered,
+  c.updated_at,
+  p.category as platform_category
+`;
 
 export async function GET(
   _request: Request,
@@ -10,15 +38,21 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const result = await query<any>(
-      `
-      SELECT c.*, p.category as platform_category
-      FROM courses c
-      LEFT JOIN platforms p ON c.platform = p.name
-      WHERE c.course_id = $1
-      `,
-      [id]
+    const getCourse = unstable_cache(
+      () => query<any>(
+        `
+        SELECT ${COURSE_DETAIL_COLUMNS}
+        FROM courses c
+        LEFT JOIN platforms p ON c.platform = p.name
+        WHERE c.course_id = $1
+        LIMIT 1
+        `,
+        [id]
+      ),
+      ['courses:detail', id],
+      { revalidate: 60, tags: ['courses'] }
     );
+    const result = await getCourse();
 
     if (result.length === 0) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 });
@@ -30,7 +64,11 @@ export async function GET(
       category: course.platform_category || 'Global',
     };
 
-    return NextResponse.json(course);
+    return NextResponse.json(course, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (err: any) {
     console.error('Course detail API using cached catalog:', err);
     const { id } = await params;

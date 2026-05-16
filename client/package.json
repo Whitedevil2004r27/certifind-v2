@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:courses": "node scripts/seed-large-course-database.mjs"
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.2",
@@ -16,7 +17,6 @@
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
     "express": "^5.2.1",
-    "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",

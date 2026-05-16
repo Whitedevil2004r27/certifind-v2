@@ -20,9 +20,9 @@ const PlatformBadge: React.FC<PlatformBadgeProps> = ({ name, category, className
   const colorClasses = categoryColors[category] || categoryColors['Global']
 
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-all duration-300 ${colorClasses} ${className}`}>
-      {Icon && <Icon size={14} strokeWidth={2.5} />}
-      <span>{name}</span>
+    <div className={`inline-flex min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all duration-300 ${colorClasses} ${className}`}>
+      {Icon && <Icon size={14} strokeWidth={2.5} className="flex-shrink-0" />}
+      <span className="truncate">{name}</span>
     </div>
   )
 }

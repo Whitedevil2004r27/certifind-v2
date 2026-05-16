@@ -14,7 +14,7 @@ export async function toggleBookmarkAction(courseId: string) {
 
   // Check if exists
   const existing = await query(
-    "SELECT * FROM bookmarks WHERE user_id = $1 AND course_id = $2",
+    "SELECT id FROM bookmarks WHERE user_id = $1 AND course_id = $2 LIMIT 1",
     [userId, courseId]
   );
 
@@ -45,7 +45,7 @@ export async function getBookmarkStatus(courseId: string) {
 
   const userId = user.id;
   const existing = await query(
-    "SELECT * FROM bookmarks WHERE user_id = $1 AND course_id = $2",
+    "SELECT id FROM bookmarks WHERE user_id = $1 AND course_id = $2 LIMIT 1",
     [userId, courseId]
   );
 

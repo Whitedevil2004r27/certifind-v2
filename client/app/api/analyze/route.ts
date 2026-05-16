@@ -15,6 +15,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Resume file must be 5MB or smaller' }, { status: 413 });
+    }
+
     // Convert file to buffer as Required by unpdf
     const bytes = await file.arrayBuffer();
     const uint8Array = new Uint8Array(bytes);
@@ -26,9 +30,20 @@ export async function POST(request: Request) {
         return null;
       }),
       query<any>(`
-        SELECT c.*, p.category as platform_category
+        SELECT
+          c.course_id,
+          c.title,
+          c.department,
+          c.rating,
+          c.level,
+          c.platform,
+          c.tags,
+          c.total_ratings,
+          p.category as platform_category
         FROM courses c
         LEFT JOIN platforms p ON c.platform = p.name
+        ORDER BY c.rating DESC, c.total_ratings DESC
+        LIMIT 400
       `).catch((err) => {
         console.warn('Analyzer using cached catalog:', err?.message || err);
         return fallbackCourses.map(withFallbackPlatform);
@@ -48,12 +63,20 @@ export async function POST(request: Request) {
     const resumeText = rawText.toLowerCase();
 
     // 1. Identify skills
-    const ALL_SKILLS = Array.from(new Set(courses.flatMap(c => [
-      (c.department || "").toLowerCase(),
-      ...(c.tags || []).map((t: string) => (t || "").toLowerCase())
-    ])));
+    const courseSkillMap = new Map<any, string[]>();
+    const allSkillSet = new Set<string>();
 
-    const matchedSkillsList = ALL_SKILLS.filter(skill => skill && resumeText.includes(skill.toLowerCase()));
+    for (const course of courses) {
+      const skills = [
+        (course.department || "").toLowerCase(),
+        ...(course.tags || []).map((tag: string) => (tag || "").toLowerCase()),
+      ].filter(Boolean);
+
+      courseSkillMap.set(course, skills);
+      skills.forEach((skill) => allSkillSet.add(skill));
+    }
+
+    const matchedSkillsList = Array.from(allSkillSet).filter(skill => resumeText.includes(skill));
     const matchedSkillsSet = new Set(matchedSkillsList);
 
     // 2. Synthesize 3-Phase Roadmap
@@ -66,27 +89,35 @@ export async function POST(request: Request) {
 
     const recommendations = roadmapPhases.map(phase => {
       const candidates = courses.filter(c => phase.levelMatch.includes(c.level || 'All Levels'));
-      
-      const scores = (candidates.length > 0 ? candidates : courses).map(course => {
-        const courseSkills = [
-          (course.department || "").toLowerCase(),
-          ...(course.tags || []).map((t: string) => (t || "").toLowerCase())
-        ];
-        
+
+      let bestCourse: any = null;
+      let bestScore = Number.NEGATIVE_INFINITY;
+
+      for (const course of candidates.length > 0 ? candidates : courses) {
+        const courseSkills = courseSkillMap.get(course) || [];
         const newSkillsCount = courseSkills.filter(s => !matchedSkillsSet.has(s)).length;
         const matchScore = courseSkills.filter(s => matchedSkillsSet.has(s)).length;
-        
-        return {
-          ...course,
-          newSkillsCount,
-          matchScore,
-          phaseId: phase.id,
-          phaseTitle: phase.title,
-          impactScore: (newSkillsCount * 3) + (course.rating || 0) + (matchScore * 0.5)
-        };
-      });
 
-      return scores.sort((a, b) => b.impactScore - a.impactScore)[0];
+        const impactScore = (newSkillsCount * 3) + (course.rating || 0) + (matchScore * 0.5);
+
+        if (impactScore > bestScore) {
+          bestScore = impactScore;
+          bestCourse = {
+            ...course,
+            newSkillsCount,
+            matchScore,
+            phaseId: phase.id,
+            phaseTitle: phase.title,
+            impactScore,
+            platforms: course.platforms || {
+              name: course.platform,
+              category: course.platform_category || 'Global',
+            },
+          };
+        }
+      }
+
+      return bestCourse;
     }).filter(Boolean);
 
     return NextResponse.json({

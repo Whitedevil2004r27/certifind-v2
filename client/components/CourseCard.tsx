@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { Star, Clock, BarChart, Bookmark, ExternalLink, Trophy } from 'lucide-react'
+import { Star, Clock, BarChart, Bookmark, ExternalLink, Trophy, BadgeCheck } from 'lucide-react'
 import PlatformBadge from './PlatformBadge'
 import { usePathname, useRouter } from 'next/navigation'
 
@@ -36,17 +36,23 @@ export interface Course {
 
 interface CourseCardProps {
   course: Course;
+  isBookmarked?: boolean;
   onBookmarkToggle?: (courseId: string, isBookmarked: boolean) => void;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => {
-
+const CourseCard: React.FC<CourseCardProps> = ({ course, isBookmarked: externalBookmarkState, onBookmarkToggle }) => {
   const router = useRouter()
   const pathname = usePathname()
-  const [isBookmarked, setIsBookmarked] = useState(false)
+  const hasExternalBookmarkState = typeof externalBookmarkState === "boolean"
+  const [isBookmarked, setIsBookmarked] = useState(Boolean(externalBookmarkState))
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    if (hasExternalBookmarkState) {
+      setIsBookmarked(Boolean(externalBookmarkState))
+      return
+    }
+
     const controller = new AbortController()
 
     const checkBookmark = async () => {
@@ -74,9 +80,9 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
     checkBookmark()
 
     return () => controller.abort()
-  }, [course.course_id])
+  }, [course.course_id, externalBookmarkState, hasExternalBookmarkState])
 
-  const toggleBookmark = async (e: React.MouseEvent) => {
+  const toggleBookmark = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
 
@@ -103,44 +109,59 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
     } finally {
       setLoading(false)
     }
-  }
+  }, [course.course_id, onBookmarkToggle, pathname, router])
 
-
-  const ratingStars = Array.from({ length: 5 }, (_, i) => (
-    <Star
-      key={i}
-      size={14}
-      className={i < Math.floor(course.rating) ? 'fill-amber-400 text-amber-400' : 'text-neutral-600'}
-    />
-  ))
+  const ratingStars = useMemo(
+    () =>
+      Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          size={14}
+          className={i < Math.floor(course.rating) ? 'fill-amber-400 text-amber-400' : 'text-neutral-600'}
+        />
+      )),
+    [course.rating]
+  )
   const price = Number(course.price || 0)
   const originalPrice = Number(course.original_price || 0)
   const discountPercentage = Number(course.discount_percentage || 0)
+  const shortDescription =
+    course.description?.trim() ||
+    `${course.department} course from ${course.platform} with practical lessons and portfolio-ready outcomes.`
+  const handleOpenCourse = useCallback(() => {
+    router.push(`/courses/${course.course_id}`)
+  }, [course.course_id, router])
 
   return (
-    <div 
-      onClick={() => router.push(`/courses/${course.course_id}`)}
-      className="group flex flex-col bg-certifind-bg/40 border border-white/5 rounded-3xl overflow-hidden hover:border-certifind-accent/40 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(114,38,255,0.1)] h-full backdrop-blur-sm relative cursor-pointer active:scale-[0.98]"
+    <article
+      onClick={handleOpenCourse}
+      className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#080817]/80 shadow-[0_18px_60px_rgba(0,0,0,0.22)] backdrop-blur-sm transition duration-500 hover:-translate-y-1 hover:border-certifind-accent/45 hover:shadow-[0_22px_70px_rgba(114,38,255,0.14)] active:scale-[0.99]"
     >
-      {/* Thumbnail Area */}
       <div className="relative aspect-video overflow-hidden block">
         <Image
           src={course.thumbnail_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop'}
           alt={course.image_alt || course.title}
           fill
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        
-        {/* Badges Overlay */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/15" />
+
+        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] shadow-lg backdrop-blur-md ${
+            course.course_type === 'Free'
+              ? 'bg-emerald-300 text-emerald-950'
+              : 'bg-amber-300 text-amber-950'
+          }`}>
+            {course.course_type}
+          </span>
           {course.is_bestseller && (
-            <span className="bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 rounded shadow-lg uppercase tracking-tight">
+            <span className="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-black shadow-lg backdrop-blur-md">
               Bestseller
             </span>
           )}
           {course.is_new && (
-            <span className="bg-certifind-accent text-white text-[10px] font-black px-2 py-0.5 rounded shadow-lg uppercase tracking-tight">
+            <span className="rounded-full bg-certifind-accent px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-lg backdrop-blur-md">
               New
             </span>
           )}
@@ -149,37 +170,41 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
         <button 
           onClick={toggleBookmark}
           disabled={loading}
-          className={`absolute top-4 right-4 p-2 backdrop-blur-md rounded-full transition-all border border-white/10 opacity-0 group-hover:opacity-100 transform translate-y-[-10px] group-hover:translate-y-0 duration-300 z-20 ${
+          className={`absolute right-4 top-4 z-20 rounded-full border border-white/10 p-2 backdrop-blur-md transition-all duration-300 sm:opacity-0 sm:group-hover:opacity-100 ${
             isBookmarked ? 'bg-rose-500 text-white opacity-100 translate-y-0' : 'bg-black/40 text-white/60 hover:text-white'
           }`}
+          aria-label={isBookmarked ? 'Remove bookmark' : 'Save course'}
         >
           <Bookmark size={18} className={isBookmarked ? 'fill-white' : ''} />
         </button>
-
-        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black to-transparent" />
         
-        <div className="absolute bottom-4 left-4">
-          <PlatformBadge name={course.platform} category={course.platforms?.category || 'Global'} />
+        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <PlatformBadge className="max-w-[136px] sm:max-w-[152px]" name={course.platform} category={course.platforms?.category || 'Global'} />
+          </div>
+          <span className="max-w-[54%] truncate rounded-full border border-white/15 bg-black/55 px-3 py-1 text-right text-[10px] font-black uppercase tracking-[0.14em] text-white/80 backdrop-blur-md">
+            {course.department}
+          </span>
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="p-6 flex flex-col flex-grow">
-        <div className="flex items-center gap-2 mb-3">
+      <div className="flex flex-grow flex-col p-5">
+        <div className="mb-3 flex items-center gap-2">
           <div className="flex items-center gap-1">
             {ratingStars}
           </div>
-          <span className="text-xs font-bold text-amber-400/80">({course.total_ratings.toLocaleString()})</span>
+          <span className="text-xs font-bold text-amber-300/85">({course.total_ratings.toLocaleString()})</span>
         </div>
 
-        <h3 className="text-lg font-bold text-white line-clamp-2 mb-2 group-hover:text-certifind-accent transition-colors leading-tight min-h-[44px]">
+        <h3 className="mb-2 min-h-[44px] text-lg font-black leading-tight tracking-tight text-white transition-colors group-hover:text-certifind-accent">
           {course.title}
         </h3>
 
-        <p className="text-sm text-neutral-400 mb-4">{course.instructor_name}</p>
+        <p className="mb-4 line-clamp-3 min-h-[60px] text-sm leading-5 text-neutral-400">
+          {shortDescription}
+        </p>
 
-        {/* Course Details Meta */}
-        <div className="grid grid-cols-2 gap-y-3 mb-6 pt-4 border-t border-white/5">
+        <div className="mb-5 grid grid-cols-2 gap-3 border-t border-white/5 pt-4">
           <div className="flex items-center gap-2 text-neutral-500">
             <Clock size={14} />
             <span className="text-xs font-medium">{course.duration_hours?.toFixed(1) || '0'} hrs</span>
@@ -188,15 +213,18 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
             <BarChart size={14} />
             <span className="text-xs font-medium">{course.level}</span>
           </div>
-          {course.certificate_offered && (
-            <div className="flex items-center gap-2 text-neutral-500 col-span-2">
+          <div className="col-span-2 flex items-center gap-2 text-neutral-500">
+            {course.certificate_offered ? (
               <Trophy size={14} className="text-certifind-accent" />
-              <span className="text-xs font-medium">Certification Offered</span>
-            </div>
-          )}
+            ) : (
+              <BadgeCheck size={14} className="text-neutral-500" />
+            )}
+            <span className="text-xs font-medium">
+              {course.certificate_offered ? 'Certificate included' : 'Audit track'}
+            </span>
+          </div>
         </div>
 
-        {/* Pricing & CTA */}
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">
             <div className="flex items-baseline gap-2">
@@ -221,15 +249,15 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onBookmarkToggle }) => 
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-2 px-5 py-2.5 bg-certifind-accent text-white text-sm font-bold rounded-xl hover:bg-certifind-accent/80 transition-all shadow-lg shadow-certifind-accent/20 z-10"
+            className="z-10 flex items-center gap-2 rounded-xl bg-certifind-accent px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-certifind-accent/20 transition-all hover:bg-certifind-accent/80"
           >
             <span>Learn</span>
             <ExternalLink size={14} />
           </a>
         </div>
       </div>
-    </div>
+    </article>
   )
 }
 
-export default CourseCard
+export default memo(CourseCard)

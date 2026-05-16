@@ -15,13 +15,24 @@ type LiveCourse = {
 };
 
 const encoder = new TextEncoder();
-const intervalMs = 5000;
+const intervalMs = 10000;
+const snapshotTtlMs = 7000;
+let latestSnapshot:
+  | {
+      expiresAt: number;
+      courses: LiveCourse[];
+    }
+  | null = null;
 
 function eventChunk(event: string, payload: unknown) {
   return encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
 }
 
 async function fetchLatestCourses() {
+  if (latestSnapshot && latestSnapshot.expiresAt > Date.now()) {
+    return latestSnapshot.courses;
+  }
+
   const courses = await query<LiveCourse>(
     `
     SELECT course_id, title, platform, course_type, rating, thumbnail_url, updated_at
@@ -30,6 +41,11 @@ async function fetchLatestCourses() {
     LIMIT 8
     `
   );
+
+  latestSnapshot = {
+    expiresAt: Date.now() + snapshotTtlMs,
+    courses,
+  };
 
   return courses;
 }

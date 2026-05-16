@@ -21,11 +21,13 @@ export default function CourseDetailPage() {
       try {
         if (!courseId) return;
 
-        const res = await fetch(`/api/courses/${courseId}`);
+        const [res, bookmarkResponse] = await Promise.all([
+          fetch(`/api/courses/${courseId}`),
+          fetch(`/api/bookmarks?courseId=${encodeURIComponent(courseId)}`),
+        ]);
         const data = await res.json();
         if (data && !data.error) {
           setCourse(data);
-          const bookmarkResponse = await fetch(`/api/bookmarks?courseId=${encodeURIComponent(courseId)}`);
           if (bookmarkResponse.ok) {
             const status = await bookmarkResponse.json();
             setIsBookmarked(Boolean(status.isBookmarked));

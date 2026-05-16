@@ -21,21 +21,43 @@ export async function getAppUser(): Promise<AppUser | null> {
 
     if (!authState.userId) return null;
 
-    const user = await currentUser();
+    const claims = authState.sessionClaims as
+      | {
+          email?: string;
+          fullName?: string;
+          firstName?: string;
+          lastName?: string;
+          username?: string;
+          imageUrl?: string;
+          picture?: string;
+          metadata?: { role?: unknown };
+        }
+      | undefined;
+    const claimName =
+      claims?.fullName ||
+      [claims?.firstName, claims?.lastName].filter(Boolean).join(" ") ||
+      claims?.username ||
+      "";
+    let user: Awaited<ReturnType<typeof currentUser>> | null = null;
+    if (!claims?.email || !claimName) {
+      user = await currentUser();
+    }
+
     const primaryEmail =
+      claims?.email ??
       user?.emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId)?.emailAddress ??
       user?.emailAddresses[0]?.emailAddress ??
       "";
     const metadataRole =
-      (authState.sessionClaims?.metadata as { role?: unknown } | undefined)?.role ??
+      claims?.metadata?.role ??
       user?.publicMetadata?.role ??
       user?.privateMetadata?.role;
 
     return {
       id: authState.userId,
       email: primaryEmail,
-      name: user?.fullName || user?.username || primaryEmail.split("@")[0] || "Learner",
-      image: user?.imageUrl,
+      name: claimName || user?.fullName || user?.username || primaryEmail.split("@")[0] || "Learner",
+      image: claims?.imageUrl || claims?.picture || user?.imageUrl,
       role: toRole(metadataRole),
       provider: "clerk",
     };

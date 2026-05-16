@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import CourseCard, { Course } from "./CourseCard";
 import { Loader2, BookX } from "lucide-react";
@@ -14,6 +14,7 @@ export default function CourseGrid({ courseType }: { courseType: "Free" | "Paid"
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => new Set());
 
   const fetchCourses = useCallback(async (pageNum: number, append: boolean = false) => {
     if (!append) setLoading(true);
@@ -62,6 +63,51 @@ export default function CourseGrid({ courseType }: { courseType: "Free" | "Paid"
     fetchCourses(next, true);
   };
 
+  const visibleCourseIdsKey = useMemo(
+    () => courses.map((course) => course.course_id).join(","),
+    [courses]
+  );
+
+  useEffect(() => {
+    if (!visibleCourseIdsKey) {
+      setBookmarkedIds(new Set());
+      return;
+    }
+
+    const controller = new AbortController();
+
+    fetch(`/api/bookmarks?courseIds=${encodeURIComponent(visibleCourseIdsKey)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (response.status === 401) return { bookmarkedCourseIds: [] };
+        if (!response.ok) throw new Error("Bookmark status failed");
+        return response.json() as Promise<{ bookmarkedCourseIds?: string[] }>;
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) {
+          setBookmarkedIds(new Set(data.bookmarkedCourseIds || []));
+        }
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          console.warn("Bookmark batch status failed:", err);
+          setBookmarkedIds(new Set());
+        }
+      });
+
+    return () => controller.abort();
+  }, [visibleCourseIdsKey]);
+
+  const handleBookmarkToggle = useCallback((courseId: string, nextState: boolean) => {
+    setBookmarkedIds((current) => {
+      const next = new Set(current);
+      if (nextState) next.add(courseId);
+      else next.delete(courseId);
+      return next;
+    });
+  }, []);
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -87,7 +133,11 @@ export default function CourseGrid({ courseType }: { courseType: "Free" | "Paid"
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
         {courses.map((course, idx) => (
           <div key={course.course_id} className="animate-fade-in-up" style={{ animationDelay: `${(idx % 6) * 100}ms` }}>
-            <CourseCard course={course} />
+            <CourseCard
+              course={course}
+              isBookmarked={bookmarkedIds.has(course.course_id)}
+              onBookmarkToggle={handleBookmarkToggle}
+            />
           </div>
         ))}
       </div>

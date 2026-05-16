@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   BookOpen,
@@ -9,7 +9,6 @@ import {
   Loader2,
   RefreshCw,
   Search,
-  ShieldCheck,
   Signal,
   SlidersHorizontal,
   X,
@@ -22,8 +21,26 @@ type Platform = {
   category: string;
 };
 
+type Department = {
+  name: string;
+  count: number;
+};
+
 type LiveCourse = Pick<Course, "course_id" | "title" | "platform" | "course_type" | "rating" | "thumbnail_url" | "updated_at">;
 type DataSource = "neon" | "cached";
+
+type CoursePagination = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+type FetchCoursesOptions = {
+  page?: number;
+  mode?: "replace" | "append";
+  showRefreshing?: boolean;
+};
 
 type Props = {
   variant?: "dashboard" | "public";
@@ -38,6 +55,13 @@ const SORTS = [
   { value: "popularity", label: "Popular" },
   { value: "newest", label: "Newest" },
 ] as const;
+const PAGE_SIZE = 12;
+const SKELETON_CARDS = Array.from({ length: 6 }, (_, index) => index);
+const SNAPSHOT_REFRESH_INTERVAL = 30000;
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 function formatTime(value?: string | null) {
   if (!value) return "Just now";
@@ -45,33 +69,35 @@ function formatTime(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Just now";
 
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  return timeFormatter.format(date);
 }
 
 function buildCourseParams({
   search,
   courseType,
+  category,
   platform,
   level,
   sort,
+  page,
 }: {
   search: string;
   courseType: string;
+  category: string;
   platform: string;
   level: string;
   sort: string;
+  page: number;
 }) {
   const params = new URLSearchParams({
-    page: "1",
-    limit: "12",
+    page: String(page),
+    limit: String(PAGE_SIZE),
     sort_by: sort,
   });
 
   if (search.trim()) params.set("search", search.trim());
   if (courseType !== "All") params.set("course_type", courseType);
+  if (category !== "All") params.set("department", category);
   if (platform !== "All") params.set("platform", platform);
   if (level !== "All") params.set("level", level);
 
@@ -81,70 +107,136 @@ function buildCourseParams({
 export default function RealtimeCourseModule({ variant = "public", signedInName }: Props) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [liveCourses, setLiveCourses] = useState<LiveCourse[]>([]);
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
   const requestRef = useRef(0);
+  const latestFetchCoursesRef = useRef<(options?: FetchCoursesOptions) => Promise<void>>(async () => undefined);
+  const liveModeRef = useRef({ hasFilters: false, sort: "updated" });
+  const lastSnapshotRefreshRef = useRef(Date.now());
   const [courseType, setCourseType] = useState<(typeof COURSE_TYPES)[number]>("All");
+  const [category, setCategory] = useState("All");
   const [platform, setPlatform] = useState("All");
   const [level, setLevel] = useState<(typeof LEVELS)[number]>("All");
   const [sort, setSort] = useState<(typeof SORTS)[number]["value"]>("updated");
+  const [pagination, setPagination] = useState<CoursePagination>({
+    total: 0,
+    page: 1,
+    limit: PAGE_SIZE,
+    totalPages: 1,
+  });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [streamState, setStreamState] = useState<"connecting" | "live" | "offline">("connecting");
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<DataSource>("neon");
   const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState("");
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => new Set());
 
-  const hasFilters = Boolean(search.trim() || courseType !== "All" || platform !== "All" || level !== "All");
+  const hasFilters = Boolean(search.trim() || courseType !== "All" || category !== "All" || platform !== "All" || level !== "All");
 
-  const fetchCourses = useCallback(async (showRefreshing = false) => {
+  const fetchCourses = useCallback(async ({
+    page = 1,
+    mode = "replace",
+    showRefreshing = false,
+  }: FetchCoursesOptions = {}) => {
     const requestId = requestRef.current + 1;
     requestRef.current = requestId;
+    const isAppend = mode === "append";
 
-    if (showRefreshing) setRefreshing(true);
+    if (isAppend) setLoadingMore(true);
+    else if (showRefreshing) setRefreshing(true);
     else setLoading(true);
     setError("");
 
     try {
       const params = buildCourseParams({
-        search,
+        search: deferredSearch,
         courseType,
+        category,
         platform,
         level,
         sort,
+        page,
       });
       const response = await fetch(`/api/courses?${params.toString()}`, { cache: "no-store" });
-      const data = await response.json();
+      const data = await response.json() as {
+        courses?: Course[];
+        pagination?: CoursePagination;
+        source?: DataSource;
+        warning?: string;
+        error?: string;
+      };
 
       if (!response.ok) throw new Error(data.error || "Courses could not be loaded");
 
       if (requestId !== requestRef.current) return;
-      setCourses(data.courses || []);
+      const nextCourses: Course[] = Array.isArray(data.courses) ? data.courses : [];
+      setCourses((current) => {
+        if (!isAppend) return nextCourses;
+
+        const existingIds = new Set(current.map((course) => course.course_id));
+        const uniqueNextCourses = nextCourses.filter((course) => !existingIds.has(course.course_id));
+        return [...current, ...uniqueNextCourses];
+      });
+      setPagination(data.pagination || {
+        total: nextCourses.length,
+        page,
+        limit: PAGE_SIZE,
+        totalPages: 1,
+      });
       setDataSource(data.source === "cached" ? "cached" : "neon");
       setStatusMessage(data.warning || "");
     } catch (err) {
       if (requestId !== requestRef.current) return;
       const message = err instanceof Error ? err.message : "Courses could not be loaded";
       setError(message);
-      setCourses([]);
+      if (!isAppend) {
+        setCourses([]);
+        setPagination({
+          total: 0,
+          page: 1,
+          limit: PAGE_SIZE,
+          totalPages: 1,
+        });
+      }
     } finally {
       if (requestId !== requestRef.current) return;
-      setLoading(false);
-      setRefreshing(false);
+      if (isAppend) setLoadingMore(false);
+      else {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [courseType, level, platform, search, sort]);
+  }, [category, courseType, deferredSearch, level, platform, sort]);
+
+  useEffect(() => {
+    latestFetchCoursesRef.current = fetchCourses;
+  }, [fetchCourses]);
+
+  useEffect(() => {
+    liveModeRef.current = { hasFilters, sort };
+  }, [hasFilters, sort]);
 
   useEffect(() => {
     let mounted = true;
 
-    fetch("/api/platforms", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((data) => {
-        if (mounted && Array.isArray(data)) setPlatforms(data);
+    Promise.all([
+      fetch("/api/platforms").then((response) => response.json()),
+      fetch("/api/departments").then((response) => response.json()),
+    ])
+      .then(([platformData, departmentData]) => {
+        if (!mounted) return;
+        if (Array.isArray(platformData)) setPlatforms(platformData);
+        if (Array.isArray(departmentData)) setDepartments(departmentData);
       })
       .catch(() => {
-        if (mounted) setPlatforms([]);
+        if (!mounted) return;
+        setPlatforms([]);
+        setDepartments([]);
       });
 
     return () => {
@@ -154,7 +246,7 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchCourses(false);
+      fetchCourses({ page: 1, mode: "replace" });
     }, 250);
 
     return () => clearTimeout(timer);
@@ -181,8 +273,11 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
       setDataSource(payload.source === "cached" ? "cached" : "neon");
       setStatusMessage(payload.warning || "");
 
-      if (!hasFilters && sort === "updated") {
-        fetchCourses(true);
+      const liveMode = liveModeRef.current;
+      const now = Date.now();
+      if (!liveMode.hasFilters && liveMode.sort === "updated" && now - lastSnapshotRefreshRef.current > SNAPSHOT_REFRESH_INTERVAL) {
+        lastSnapshotRefreshRef.current = now;
+        void latestFetchCoursesRef.current({ page: 1, mode: "replace", showRefreshing: true });
       }
     });
 
@@ -199,7 +294,52 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
     return () => {
       source.close();
     };
-  }, [fetchCourses, hasFilters, sort]);
+  }, []);
+
+  const visibleCourseIdsKey = useMemo(
+    () => courses.slice(0, 60).map((course) => course.course_id).join(","),
+    [courses]
+  );
+
+  useEffect(() => {
+    if (!visibleCourseIdsKey) {
+      setBookmarkedIds(new Set());
+      return;
+    }
+
+    const controller = new AbortController();
+
+    fetch(`/api/bookmarks?courseIds=${encodeURIComponent(visibleCourseIdsKey)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (response.status === 401) return { bookmarkedCourseIds: [] };
+        if (!response.ok) throw new Error("Bookmark status failed");
+        return response.json() as Promise<{ bookmarkedCourseIds?: string[] }>;
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) {
+          setBookmarkedIds(new Set(data.bookmarkedCourseIds || []));
+        }
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted) {
+          console.warn("Bookmark batch status failed:", err);
+          setBookmarkedIds(new Set());
+        }
+      });
+
+    return () => controller.abort();
+  }, [visibleCourseIdsKey]);
+
+  const handleBookmarkToggle = useCallback((courseId: string, nextState: boolean) => {
+    setBookmarkedIds((current) => {
+      const next = new Set(current);
+      if (nextState) next.add(courseId);
+      else next.delete(courseId);
+      return next;
+    });
+  }, []);
 
   const platformOptions = useMemo(
     () => ["All", ...platforms.map((entry) => entry.name)],
@@ -207,18 +347,38 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
   );
 
   const activeLabel = useMemo(() => {
-    const labels = [courseType, platform, level].filter((value) => value !== "All");
+    const labels = [courseType, category, platform, level].filter((value) => value !== "All");
     if (search.trim()) labels.unshift(`"${search.trim()}"`);
     return labels.length ? labels.join(" / ") : "All courses";
-  }, [courseType, level, platform, search]);
+  }, [category, courseType, level, platform, search]);
+
+  const hasMoreCourses = pagination.page < pagination.totalPages && courses.length < pagination.total;
+
+  const summaryCards = useMemo(
+    () => [
+      { label: dataSource === "cached" ? "Cached feed" : "Live feed", value: liveCourses.length || 0, icon: Activity, color: dataSource === "cached" ? "text-amber-300" : "text-emerald-300" },
+      { label: "Catalog", value: pagination.total.toLocaleString(), icon: BookOpen, color: "text-cyan-300" },
+      { label: "Visible", value: courses.length.toLocaleString(), icon: Database, color: "text-amber-300" },
+    ],
+    [courses.length, dataSource, liveCourses.length, pagination.total]
+  );
 
   const resetFilters = () => {
     setSearch("");
     setCourseType("All");
+    setCategory("All");
     setPlatform("All");
     setLevel("All");
     setSort("updated");
   };
+
+  const handleLoadMore = useCallback(() => {
+    if (loadingMore || !hasMoreCourses) return;
+    void fetchCourses({
+      page: pagination.page + 1,
+      mode: "append",
+    });
+  }, [fetchCourses, hasMoreCourses, loadingMore, pagination.page]);
 
   return (
     <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-black/35 p-4 shadow-[0_25px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl sm:p-6 lg:p-8">
@@ -249,11 +409,7 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:w-[520px]">
-          {[
-            { label: dataSource === "cached" ? "Cached feed" : "Live feed", value: liveCourses.length || 0, icon: Activity, color: dataSource === "cached" ? "text-amber-300" : "text-emerald-300" },
-            { label: "Visible", value: courses.length, icon: BookOpen, color: "text-cyan-300" },
-            { label: "Secured", value: "Clerk", icon: ShieldCheck, color: "text-amber-300" },
-          ].map(({ label, value, icon: Icon, color }) => (
+          {summaryCards.map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
               <Icon className={`mb-3 h-5 w-5 ${color}`} />
               <div className="text-2xl font-black text-white">{value}</div>
@@ -263,8 +419,8 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
         </div>
       </div>
 
-      <div className="mb-6 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_160px_180px_160px_150px_auto]">
-        <label className="relative block min-w-0">
+      <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_140px_170px_170px_140px_140px_auto]">
+        <label className="relative block min-w-0 md:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             value={search}
@@ -282,6 +438,18 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
         >
           {COURSE_TYPES.map((value) => (
             <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+
+        <select
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          className="h-12 rounded-2xl border border-white/10 bg-black/40 px-4 text-sm font-bold text-white outline-none transition focus:border-cyan-300/50"
+          aria-label="Category"
+        >
+          <option value="All">All categories</option>
+          {departments.map((entry) => (
+            <option key={entry.name} value={entry.name}>{entry.name} ({entry.count})</option>
           ))}
         </select>
 
@@ -321,7 +489,8 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => fetchCourses(true)}
+            onClick={() => void fetchCourses({ page: 1, mode: "replace", showRefreshing: true })}
+            disabled={refreshing}
             className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 px-4 text-sm font-black text-cyan-100 transition hover:bg-cyan-300/15 lg:flex-none"
           >
             {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -370,22 +539,54 @@ export default function RealtimeCourseModule({ variant = "public", signedInName 
             </div>
           ) : loading ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, index) => (
+              {SKELETON_CARDS.map((index) => (
                 <div key={index} className="h-[460px] rounded-3xl border border-white/10 bg-white/[0.045] animate-pulse" />
               ))}
             </div>
           ) : courses.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-              {courses.map((course, index) => (
-                <div
-                  key={course.course_id}
-                  className="animate-fade-in-up"
-                  style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
-                >
-                  <CourseCard course={course} />
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                {courses.map((course, index) => (
+                  <div
+                    key={course.course_id}
+                    className="animate-fade-in-up"
+                    style={{
+                      animationDelay: `${Math.min(index, 8) * 45}ms`,
+                      contentVisibility: "auto",
+                      containIntrinsicSize: "560px",
+                    }}
+                  >
+                    <CourseCard
+                      course={course}
+                      isBookmarked={bookmarkedIds.has(course.course_id)}
+                      onBookmarkToggle={handleBookmarkToggle}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-3xl border border-white/10 bg-white/[0.035] px-4 py-4 text-center sm:flex-row sm:text-left">
+                <p className="text-sm font-semibold text-slate-400">
+                  Showing <span className="font-black text-white">{courses.length.toLocaleString()}</span> of{" "}
+                  <span className="font-black text-white">{pagination.total.toLocaleString()}</span> courses
+                </p>
+                {hasMoreCourses ? (
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="inline-flex h-11 min-w-[150px] items-center justify-center gap-2 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 px-5 text-sm font-black text-cyan-100 transition hover:bg-cyan-300/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {loadingMore ? "Loading" : "Load more"}
+                  </button>
+                ) : (
+                  <span className="rounded-full border border-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                    End of results
+                  </span>
+                )}
+              </div>
+            </>
           ) : (
             <div className="rounded-3xl border border-dashed border-white/15 bg-white/[0.03] p-10 text-center">
               <Search className="mx-auto mb-3 h-9 w-9 text-slate-600" />

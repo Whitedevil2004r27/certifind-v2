@@ -60,6 +60,56 @@
     background: radial-gradient(ellipse at 50% 48%, transparent 0 34%, rgba(0, 0, 0, 0.78) 70%);
   }
 
+  .corridor-floor-light {
+    bottom: var(--corridor-light-bottom);
+    transform: translate3d(-50%, 0, 0);
+    width: var(--corridor-light-width);
+    will-change: opacity, transform;
+  }
+
+  .corridor-avatar-core {
+    backface-visibility: hidden;
+    position: relative;
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  .corridor-avatar-core::before,
+  .corridor-avatar-core::after {
+    border: 1px solid rgba(103, 232, 249, 0.24);
+    border-radius: 9999px;
+    content: "";
+    inset: -0.65rem;
+    opacity: 0.58;
+    pointer-events: none;
+    position: absolute;
+  }
+
+  .corridor-avatar-core::before {
+    animation: corridor-avatar-pulse 3.2s ease-in-out infinite;
+  }
+
+  .corridor-avatar-core::after {
+    animation: corridor-avatar-pulse 3.2s ease-in-out infinite 1.6s;
+  }
+
+  @keyframes corridor-avatar-pulse {
+    0% {
+      opacity: 0.48;
+      transform: scale3d(0.84, 0.84, 1);
+    }
+
+    70% {
+      opacity: 0;
+      transform: scale3d(1.42, 1.42, 1);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale3d(1.42, 1.42, 1);
+    }
+  }
+
   .growth-branch {
     left: var(--branch-left);
     rotate: var(--branch-rotate);
@@ -70,8 +120,30 @@
     transform: translateX(-50%) rotate(var(--branch-counter-rotate));
   }
 
+  .certificate-stage {
+    contain: layout paint style;
+    isolation: isolate;
+  }
+
   .certificate-card {
-    transform: translate(-50%, -50%) rotate(var(--cert-angle)) translateY(-5rem) rotate(var(--cert-counter-angle));
+    backface-visibility: hidden;
+    contain: layout paint style;
+    transform: translate3d(-50%, -50%, 0) rotateZ(var(--cert-angle)) translate3d(0, -5rem, 0) rotateZ(var(--cert-counter-angle));
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .certificate-card-inner,
+  .orbit-ring,
+  .certificate-core {
+    backface-visibility: hidden;
+    contain: layout paint style;
+    transform: translateZ(0);
+  }
+
+  .certificate-card-inner,
+  .orbit-ring {
+    will-change: transform, opacity;
   }
 
   .roadmap-node {
@@ -83,7 +155,7 @@
 @media (min-width: 640px) {
   @layer utilities {
     .certificate-card {
-      transform: translate(-50%, -50%) rotate(var(--cert-angle)) translateY(-9.75rem) rotate(var(--cert-counter-angle));
+      transform: translate3d(-50%, -50%, 0) rotateZ(var(--cert-angle)) translate3d(0, -9.75rem, 0) rotateZ(var(--cert-counter-angle));
     }
   }
 }
@@ -91,7 +163,7 @@
 @media (min-width: 1024px) {
   @layer utilities {
     .certificate-card {
-      transform: translate(-50%, -50%) rotate(var(--cert-angle)) translateY(-10.625rem) rotate(var(--cert-counter-angle));
+      transform: translate3d(-50%, -50%, 0) rotateZ(var(--cert-angle)) translate3d(0, -10.625rem, 0) rotateZ(var(--cert-counter-angle));
     }
   }
 }
@@ -101,7 +173,7 @@
     .certificate-card {
       left: var(--cert-mobile-left);
       top: var(--cert-mobile-top);
-      transform: translate(-50%, -50%);
+      transform: translate3d(-50%, -50%, 0);
     }
 
     .roadmap-node {

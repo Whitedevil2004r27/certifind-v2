@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   Award,
@@ -19,9 +18,13 @@ import {
   User,
   Zap,
 } from "lucide-react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from "lenis";
+
+type GsapApi = typeof import("gsap").default;
+type LenisLike = {
+  on(event: "scroll", callback: () => void): void;
+  raf(time: number): void;
+  destroy(): void;
+};
 
 const codeFragments = ["HTML", "React", "Python", "AI", "Cloud", "UI/UX"];
 
@@ -37,8 +40,8 @@ const certificates = ["Frontend", "Data", "Cloud", "AI", "Product"];
 const mobileCertificatePositions = [
   { left: "50%", top: "16%" },
   { left: "74%", top: "36%" },
-  { left: "68%", top: "70%" },
-  { left: "32%", top: "70%" },
+  { left: "68%", top: "84%" },
+  { left: "32%", top: "84%" },
   { left: "26%", top: "36%" },
 ];
 
@@ -50,6 +53,7 @@ const roadmapNodes = [
 ];
 
 const achievements = ["React verified", "Python certified", "Cloud ready", "AI portfolio"];
+const corridorFloorLights = Array.from({ length: 6 }, (_, index) => index);
 
 const growthBranches = [
   { label: "Skills", top: "20%", left: "22%", mobileLeft: "40%", mobileTop: "19%", rotate: "-34deg" },
@@ -78,23 +82,31 @@ function VoidParticles() {
     const mount = mountRef.current;
     if (!mount) return;
 
+    const connection = navigator as Navigator & { connection?: { saveData?: boolean } };
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion || connection.connection?.saveData) return;
+
     let cancelled = false;
     let cleanupScene: (() => void) | null = null;
 
     import("three").then((THREE) => {
       if (cancelled || !mountRef.current) return;
 
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
       camera.position.z = 3.2;
 
-      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: false,
+        powerPreference: "low-power",
+      });
+      const isSmallViewport = window.innerWidth < 640;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, isSmallViewport ? 1.15 : 1.5));
       renderer.setClearColor(0x000000, 0);
       mount.appendChild(renderer.domElement);
 
-      const particleCount = 900;
+      const particleCount = isSmallViewport ? 420 : 720;
       const positions = new Float32Array(particleCount * 3);
       const colors = new Float32Array(particleCount * 3);
       const cyan = new THREE.Color("#67e8f9");
@@ -132,6 +144,7 @@ function VoidParticles() {
       scene.add(points);
 
       let frameId = 0;
+      let sceneVisible = true;
 
       const resize = () => {
         const width = mount.clientWidth || window.innerWidth;
@@ -142,20 +155,29 @@ function VoidParticles() {
       };
 
       const render = () => {
-        if (!prefersReducedMotion) {
+        if (sceneVisible && document.visibilityState === "visible") {
           points.rotation.y += 0.00075;
           points.rotation.x += 0.00022;
+          renderer.render(scene, camera);
         }
 
-        renderer.render(scene, camera);
         frameId = window.requestAnimationFrame(render);
       };
 
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          sceneVisible = Boolean(entry?.isIntersecting);
+        },
+        { threshold: 0.02 }
+      );
+
       resize();
+      observer.observe(mount);
       render();
       window.addEventListener("resize", resize);
 
       cleanupScene = () => {
+        observer.disconnect();
         window.removeEventListener("resize", resize);
         window.cancelAnimationFrame(frameId);
         geometry.dispose();
@@ -183,17 +205,15 @@ function CourseTile({ title, meta, icon: Icon, tone }: (typeof courseCards)[numb
         : "border-cyan-300/[0.35] bg-cyan-300/10 text-cyan-100 shadow-[0_0_42px_rgba(103,232,249,0.18)]";
 
   return (
-    <motion.article
+    <article
       data-course-card
       data-hoverable
-      whileHover={{ y: -8, scale: 1.03 }}
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className={`group min-h-36 rounded-2xl border p-5 backdrop-blur-2xl transition duration-700 hover:-translate-y-2 hover:scale-[1.03] ${toneClass}`}
     >
       <Icon className="h-6 w-6" />
       <h3 className="mt-6 text-xl font-black text-white">{title}</h3>
       <p className="mt-2 text-sm text-white/[0.56]">{meta}</p>
-    </motion.article>
+    </article>
   );
 }
 
@@ -202,9 +222,8 @@ function CertificateCard({ label, index }: { label: string; index: number }) {
 
   return (
     <div
-      data-certificate
-      data-hoverable
-      className="certificate-card absolute left-1/2 top-1/2 h-20 w-24 rounded-2xl border border-yellow-200/40 bg-[linear-gradient(135deg,rgba(247,215,116,0.18),rgba(255,255,255,0.04))] p-2.5 text-yellow-50 shadow-[0_0_42px_rgba(247,215,116,0.14)] backdrop-blur-xl transition duration-700 hover:scale-105 sm:h-32 sm:w-48 sm:p-5 lg:h-36 lg:w-56 lg:shadow-[0_0_70px_rgba(247,215,116,0.18)]"
+      data-certificate-shell
+      className="certificate-card absolute left-1/2 top-1/2 h-20 w-24 sm:h-32 sm:w-48 lg:h-36 lg:w-56"
       style={
         {
           "--cert-angle": `${index * 72}deg`,
@@ -214,9 +233,15 @@ function CertificateCard({ label, index }: { label: string; index: number }) {
         } as CSSProperties
       }
     >
-      <Award className="h-4 w-4 text-yellow-200 sm:h-7 sm:w-7 lg:h-8 lg:w-8" />
-      <p className="mt-3 text-[9px] uppercase leading-none text-yellow-100/70 sm:mt-6 sm:text-xs lg:mt-8">Verified path</p>
-      <h3 className="mt-1 text-sm font-black tracking-tight text-white sm:text-xl lg:text-2xl">{label}</h3>
+      <div
+        data-certificate-card
+        data-hoverable
+        className="certificate-card-inner h-full w-full rounded-2xl border border-yellow-200/40 bg-[linear-gradient(135deg,rgba(247,215,116,0.18),rgba(255,255,255,0.04))] p-2.5 text-yellow-50 shadow-[0_0_34px_rgba(247,215,116,0.13)] backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-500 hover:border-yellow-100/60 hover:shadow-[0_0_46px_rgba(247,215,116,0.18)] sm:p-5 lg:shadow-[0_0_54px_rgba(247,215,116,0.16)]"
+      >
+        <Award className="h-4 w-4 text-yellow-200 sm:h-7 sm:w-7 lg:h-8 lg:w-8" />
+        <p className="mt-3 text-[9px] uppercase leading-none text-yellow-100/70 sm:mt-6 sm:text-xs lg:mt-8">Verified path</p>
+        <h3 className="mt-1 text-sm font-black tracking-tight text-white sm:text-xl lg:text-2xl">{label}</h3>
+      </div>
     </div>
   );
 }
@@ -257,223 +282,399 @@ export default function CinematicCertifindStory() {
     const root = rootRef.current;
     if (!root) return;
 
-    gsap.registerPlugin(ScrollTrigger);
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let cancelled = false;
+    let cleanupAnimations: (() => void) | null = null;
 
-    let lenis: Lenis | null = null;
-    let lenisTicker: ((time: number) => void) | null = null;
+    void (async () => {
+      const [{ default: gsap }, { ScrollTrigger }, { default: Lenis }] = await Promise.all([
+        import("gsap"),
+        import("gsap/ScrollTrigger"),
+        import("lenis"),
+      ]);
 
-    if (!prefersReducedMotion) {
+      if (cancelled || !rootRef.current) return;
+
+      gsap.registerPlugin(ScrollTrigger);
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (prefersReducedMotion) {
+        gsap.set(root.querySelectorAll("[data-reveal]"), { autoAlpha: 1, y: 0, filter: "none" });
+        cleanupAnimations = () => ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+        return;
+      }
+
+      let lenis: LenisLike | null = null;
+      let lenisTicker: ((time: number) => void) | null = null;
+
       lenis = new Lenis({
-        duration: 1.6,
+        duration: 1.45,
         easing: (value: number) => Math.min(1, 1.001 - Math.pow(2, -10 * value)),
         smoothWheel: true,
         wheelMultiplier: 0.78,
-      });
+      }) as LenisLike;
 
       lenis.on("scroll", ScrollTrigger.update);
       lenisTicker = (time: number) => lenis?.raf(time * 1000);
       gsap.ticker.add(lenisTicker);
       gsap.ticker.lagSmoothing(0);
-    }
 
-    const pointerFine = window.matchMedia("(pointer: fine)").matches;
-    const moveCursor = (event: PointerEvent) => {
-      if (!cursorRef.current || !pointerFine || prefersReducedMotion) return;
-      gsap.to(cursorRef.current, {
-        x: event.clientX,
-        y: event.clientY,
-        duration: 0.65,
-        ease: "power3.out",
-      });
-    };
+      const pointerFine = window.matchMedia("(pointer: fine)").matches;
+      const cursorX = cursorRef.current
+        ? (gsap as GsapApi).quickTo(cursorRef.current, "x", { duration: 0.65, ease: "power3.out" })
+        : null;
+      const cursorY = cursorRef.current
+        ? (gsap as GsapApi).quickTo(cursorRef.current, "y", { duration: 0.65, ease: "power3.out" })
+        : null;
+      const moveCursor = (event: PointerEvent) => {
+        if (!pointerFine) return;
+        cursorX?.(event.clientX);
+        cursorY?.(event.clientY);
+      };
 
-    window.addEventListener("pointermove", moveCursor, { passive: true });
+      if (pointerFine) {
+        window.addEventListener("pointermove", moveCursor, { passive: true });
+      }
 
-    const ctx = gsap.context(() => {
-      gsap.utils.toArray<HTMLElement>("[data-scene]").forEach((scene) => {
-        const revealTargets = scene.querySelectorAll("[data-reveal]");
-        const slowParallaxTargets = scene.querySelectorAll("[data-parallax-slow]");
-        const deepParallaxTargets = scene.querySelectorAll("[data-parallax-deep]");
+      const scenePointerCleanups: Array<() => void> = [];
 
-        if (revealTargets.length) {
-          gsap.fromTo(
-            revealTargets,
-            { autoAlpha: 0, y: 72, filter: "blur(18px)" },
-            {
-              autoAlpha: 1,
-              y: 0,
-              filter: "blur(0px)",
-              duration: 1.55,
-              ease: "power3.out",
-              stagger: 0.12,
+      const ctx = gsap.context(() => {
+        gsap.utils.toArray<HTMLElement>("[data-scene]").forEach((scene) => {
+          const revealTargets = scene.querySelectorAll("[data-reveal]");
+          const slowParallaxTargets = scene.querySelectorAll("[data-parallax-slow]");
+          const deepParallaxTargets = scene.querySelectorAll("[data-parallax-deep]");
+
+          if (revealTargets.length) {
+            gsap.fromTo(
+              revealTargets,
+              { autoAlpha: 0, y: 52, filter: "blur(14px)" },
+              {
+                autoAlpha: 1,
+                y: 0,
+                filter: "blur(0px)",
+                duration: 1.2,
+                ease: "power3.out",
+                stagger: 0.1,
+                scrollTrigger: {
+                  trigger: scene,
+                  start: "top 72%",
+                },
+              }
+            );
+          }
+
+          if (slowParallaxTargets.length) {
+            gsap.to(slowParallaxTargets, {
+              yPercent: -10,
+              ease: "none",
               scrollTrigger: {
                 trigger: scene,
-                start: "top 72%",
+                start: "top bottom",
+                end: "bottom top",
+                scrub: 1.8,
+              },
+            });
+          }
+
+          if (deepParallaxTargets.length) {
+            gsap.to(deepParallaxTargets, {
+              yPercent: -18,
+              ease: "none",
+              scrollTrigger: {
+                trigger: scene,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: 2,
+              },
+            });
+          }
+        });
+
+        gsap.to("[data-code-token]", {
+          rotateY: 280,
+          rotateX: 22,
+          z: 96,
+          opacity: 0.24,
+          scale: 0.8,
+          stagger: 0.12,
+          ease: "none",
+          scrollTrigger: {
+            trigger: "[data-scene='code']",
+            start: "top 62%",
+            end: "bottom 24%",
+            scrub: 1.6,
+          },
+        });
+
+        gsap.fromTo(
+          "[data-course-card]",
+          { opacity: 0.42, y: 30, rotateX: -12, scale: 0.94 },
+          {
+            opacity: 1,
+            y: 0,
+            rotateX: 0,
+            scale: 1,
+            stagger: 0.1,
+            duration: 1.1,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: "[data-scene='code']",
+              start: "top 76%",
+            },
+          }
+        );
+
+        gsap.to("[data-expand-frame]", {
+          scale: 1.06,
+          borderRadius: "2rem",
+          ease: "none",
+          scrollTrigger: {
+            trigger: "[data-scene='code']",
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1.4,
+          },
+        });
+
+        const certificateScene = root.querySelector<HTMLElement>("[data-scene='certificates']");
+        if (certificateScene) {
+          const orbitRing = certificateScene.querySelector<HTMLElement>("[data-orbit-ring]");
+          const certificateCards = certificateScene.querySelectorAll<HTMLElement>("[data-certificate-card]");
+          const compactMotion = window.matchMedia("(max-width: 640px)").matches;
+
+          gsap.set(certificateCards, {
+            autoAlpha: 0.35,
+            scale: 0.96,
+            y: 10,
+            force3D: true,
+            transformOrigin: "50% 50%",
+          });
+
+          if (orbitRing) {
+            gsap.set(orbitRing, { force3D: true, transformOrigin: "50% 50%" });
+            gsap.to(orbitRing, {
+              rotate: compactMotion ? 90 : 180,
+              ease: "none",
+              scrollTrigger: {
+                trigger: certificateScene,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: compactMotion ? 3 : 2.4,
+                invalidateOnRefresh: false,
+              },
+            });
+          }
+
+          if (certificateCards.length) {
+            gsap.to(certificateCards, {
+              autoAlpha: 1,
+              scale: 1,
+              y: 0,
+              stagger: 0.055,
+              duration: 0.75,
+              ease: "power2.out",
+              force3D: true,
+              scrollTrigger: {
+                trigger: certificateScene,
+                start: "top 62%",
+                once: true,
+              },
+            });
+          }
+        }
+
+        gsap.fromTo(
+          "[data-road-line]",
+          { scaleX: 0, transformOrigin: "left center" },
+          {
+            scaleX: 1,
+            stagger: 0.08,
+            duration: 1.05,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: "[data-scene='roadmap']",
+              start: "top 62%",
+            },
+          }
+        );
+
+        const corridorScene = root.querySelector<HTMLElement>("[data-scene='corridor']");
+        if (corridorScene) {
+          const corridorPanels = corridorScene.querySelectorAll<HTMLElement>("[data-corridor-panel]");
+          const corridorLights = corridorScene.querySelectorAll<HTMLElement>("[data-corridor-light]");
+          const corridorAchievements = corridorScene.querySelectorAll<HTMLElement>("[data-corridor-achievement]");
+          const corridorAchievementLines = corridorScene.querySelectorAll<HTMLElement>("[data-corridor-achievement-line]");
+          const corridorHorizon = corridorScene.querySelector<HTMLElement>("[data-corridor-horizon]");
+          const corridorAvatar = corridorScene.querySelector<HTMLElement>("[data-corridor-avatar]");
+          const corridorAvatarCore = corridorScene.querySelector<HTMLElement>("[data-corridor-avatar-core]");
+          const corridorTrail = corridorScene.querySelector<HTMLElement>("[data-corridor-trail]");
+          const corridorTilt = corridorScene.querySelector<HTMLElement>("[data-corridor-tilt]");
+
+          gsap.fromTo(
+            corridorPanels,
+            { autoAlpha: 0.14, z: -150, scale: 0.84 },
+            {
+              autoAlpha: 1,
+              z: 0,
+              scale: 1,
+              stagger: 0.08,
+              ease: "power2.out",
+              scrollTrigger: {
+                trigger: corridorScene,
+                start: "top 65%",
+                end: "bottom 28%",
+                scrub: 1.45,
               },
             }
           );
-        }
 
-        if (slowParallaxTargets.length) {
-          gsap.to(slowParallaxTargets, {
-            yPercent: -14,
-            ease: "none",
+          const corridorTimeline = gsap.timeline({
             scrollTrigger: {
-              trigger: scene,
-              start: "top bottom",
-              end: "bottom top",
+              trigger: corridorScene,
+              start: "top 72%",
+              end: "bottom 18%",
               scrub: 1.8,
             },
           });
+
+          if (corridorHorizon) {
+            corridorTimeline.fromTo(
+              corridorHorizon,
+              { autoAlpha: 0.25, scaleX: 0.32 },
+              { autoAlpha: 1, scaleX: 1, ease: "none" },
+              0
+            );
+          }
+
+          if (corridorAvatar) {
+            corridorTimeline.fromTo(
+              corridorAvatar,
+              { y: 60, z: -40, scale: 0.82, autoAlpha: 0.72 },
+              { y: -78, z: 120, scale: 1.16, autoAlpha: 1, ease: "none" },
+              0
+            );
+          }
+
+          if (corridorTrail) {
+            corridorTimeline.fromTo(
+              corridorTrail,
+              { scaleY: 0.18, autoAlpha: 0.22, transformOrigin: "bottom center" },
+              { scaleY: 1, autoAlpha: 0.8, ease: "none" },
+              0.08
+            );
+          }
+
+          if (corridorLights.length) {
+            corridorTimeline.fromTo(
+              corridorLights,
+              { autoAlpha: 0.12, scaleX: 0.28 },
+              { autoAlpha: 0.92, scaleX: 1, stagger: 0.08, ease: "none" },
+              0.02
+            );
+          }
+
+          if (corridorAchievements.length) {
+            gsap.fromTo(
+              corridorAchievements,
+              { autoAlpha: 0.18, x: -34, filter: "blur(8px)" },
+              {
+                autoAlpha: 1,
+                x: 0,
+                filter: "blur(0px)",
+                stagger: 0.11,
+                duration: 0.95,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: corridorScene,
+                  start: "top 56%",
+                  once: true,
+                },
+              }
+            );
+          }
+
+          if (corridorAchievementLines.length) {
+            gsap.fromTo(
+              corridorAchievementLines,
+              { scaleX: 0, transformOrigin: "left center" },
+              {
+                scaleX: 1,
+                stagger: 0.1,
+                duration: 0.8,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: corridorScene,
+                  start: "top 50%",
+                  once: true,
+                },
+              }
+            );
+          }
+
+          if (corridorAvatarCore) {
+            gsap.to(corridorAvatarCore, {
+              y: -8,
+              duration: 1.55,
+              ease: "sine.inOut",
+              repeat: -1,
+              yoyo: true,
+            });
+          }
+
+          if (corridorTilt && pointerFine) {
+            const rotateX = (gsap as GsapApi).quickTo(corridorTilt, "rotationX", { duration: 0.75, ease: "power3.out" });
+            const rotateY = (gsap as GsapApi).quickTo(corridorTilt, "rotationY", { duration: 0.75, ease: "power3.out" });
+            const handleCorridorMove = (event: PointerEvent) => {
+              const rect = corridorTilt.getBoundingClientRect();
+              const x = (event.clientX - rect.left) / rect.width - 0.5;
+              const y = (event.clientY - rect.top) / rect.height - 0.5;
+              rotateY(x * 5);
+              rotateX(y * -4);
+            };
+            const handleCorridorLeave = () => {
+              rotateX(0);
+              rotateY(0);
+            };
+
+            corridorTilt.addEventListener("pointermove", handleCorridorMove, { passive: true });
+            corridorTilt.addEventListener("pointerleave", handleCorridorLeave);
+            scenePointerCleanups.push(() => {
+              corridorTilt.removeEventListener("pointermove", handleCorridorMove);
+              corridorTilt.removeEventListener("pointerleave", handleCorridorLeave);
+            });
+          }
         }
 
-        if (deepParallaxTargets.length) {
-          gsap.to(deepParallaxTargets, {
-            yPercent: -28,
-            ease: "none",
+        gsap.fromTo(
+          "[data-tree-branch]",
+          { scaleY: 0, autoAlpha: 0, transformOrigin: "bottom center" },
+          {
+            scaleY: 1,
+            autoAlpha: 1,
+            stagger: 0.12,
+            duration: 1.2,
+            ease: "power3.out",
             scrollTrigger: {
-              trigger: scene,
-              start: "top bottom",
-              end: "bottom top",
-              scrub: 2.2,
+              trigger: "[data-scene='tree']",
+              start: "top 58%",
             },
-          });
-        }
-      });
+          }
+        );
 
-      gsap.to("[data-code-token]", {
-        rotateY: 360,
-        rotateX: 28,
-        z: 140,
-        opacity: 0.2,
-        scale: 0.74,
-        stagger: 0.08,
-        ease: "none",
-        scrollTrigger: {
-          trigger: "[data-scene='code']",
-          start: "top 62%",
-          end: "bottom 24%",
-          scrub: 1.6,
-        },
-      });
+        ScrollTrigger.refresh();
+      }, root);
 
-      gsap.fromTo(
-        "[data-course-card]",
-        { opacity: 0.42, y: 36, rotateX: -18, scale: 0.92 },
-        {
-          opacity: 1,
-          y: 0,
-          rotateX: 0,
-          scale: 1,
-          stagger: 0.12,
-          duration: 1.4,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: "[data-scene='code']",
-            start: "top 76%",
-          },
-        }
-      );
-
-      gsap.to("[data-expand-frame]", {
-        scale: 1.12,
-        borderRadius: "2rem",
-        ease: "none",
-        scrollTrigger: {
-          trigger: "[data-scene='code']",
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 1.4,
-        },
-      });
-
-      gsap.to("[data-orbit-ring]", {
-        rotate: 360,
-        ease: "none",
-        scrollTrigger: {
-          trigger: "[data-scene='certificates']",
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 2.4,
-        },
-      });
-
-      gsap.fromTo(
-        "[data-certificate]",
-        { autoAlpha: 0.22, scale: 0.76, rotateY: -40 },
-        {
-          autoAlpha: 1,
-          scale: 1,
-          rotateY: 0,
-          stagger: 0.08,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: "[data-scene='certificates']",
-            start: "top 58%",
-            end: "bottom 40%",
-            scrub: 1.3,
-          },
-        }
-      );
-
-      gsap.fromTo(
-        "[data-road-line]",
-        { scaleX: 0, transformOrigin: "left center" },
-        {
-          scaleX: 1,
-          stagger: 0.08,
-          duration: 1.2,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: "[data-scene='roadmap']",
-            start: "top 62%",
-          },
-        }
-      );
-
-      gsap.fromTo(
-        "[data-corridor-panel]",
-        { autoAlpha: 0.12, z: -180, scale: 0.84 },
-        {
-          autoAlpha: 1,
-          z: 0,
-          scale: 1,
-          stagger: 0.09,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: "[data-scene='corridor']",
-            start: "top 60%",
-            end: "bottom 30%",
-            scrub: 1.5,
-          },
-        }
-      );
-
-      gsap.fromTo(
-        "[data-tree-branch]",
-        { scaleY: 0, autoAlpha: 0, transformOrigin: "bottom center" },
-        {
-          scaleY: 1,
-          autoAlpha: 1,
-          stagger: 0.12,
-          duration: 1.4,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: "[data-scene='tree']",
-            start: "top 58%",
-          },
-        }
-      );
-
-      ScrollTrigger.refresh();
-    }, root);
+      cleanupAnimations = () => {
+        scenePointerCleanups.forEach((cleanup) => cleanup());
+        ctx.revert();
+        if (pointerFine) window.removeEventListener("pointermove", moveCursor);
+        if (lenisTicker) gsap.ticker.remove(lenisTicker);
+        lenis?.destroy();
+      };
+    })();
 
     return () => {
-      ctx.revert();
-      window.removeEventListener("pointermove", moveCursor);
-      if (lenisTicker) gsap.ticker.remove(lenisTicker);
-      lenis?.destroy();
+      cancelled = true;
+      cleanupAnimations?.();
     };
   }, []);
 
@@ -568,12 +769,14 @@ export default function CinematicCertifindStory() {
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_50%,rgba(247,215,116,0.14),transparent_34%),radial-gradient(circle_at_20%_20%,rgba(139,92,246,0.13),transparent_32%)]" aria-hidden="true" />
 
         <div className={`${sceneContainer} lg:grid-cols-[1.05fr_0.8fr]`}>
-          <div data-parallax-slow className="cinematic-perspective relative min-h-[460px] overflow-hidden rounded-[2rem] border border-yellow-200/[0.12] bg-white/[0.025] sm:min-h-[540px] lg:min-h-[620px] lg:rounded-[2.75rem]">
-            <div data-orbit-ring className="absolute left-1/2 top-1/2 h-[290px] w-[290px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-yellow-200/[0.18] shadow-[0_0_70px_rgba(247,215,116,0.08)] sm:h-[360px] sm:w-[360px] lg:h-[440px] lg:w-[440px]" />
+          <div data-parallax-slow className="certificate-stage cinematic-perspective relative min-h-[460px] overflow-hidden rounded-[2rem] border border-yellow-200/[0.12] bg-white/[0.025] sm:min-h-[540px] lg:min-h-[620px] lg:rounded-[2.75rem]">
+            <div className="absolute left-1/2 top-1/2 h-[290px] w-[290px] -translate-x-1/2 -translate-y-1/2 sm:h-[360px] sm:w-[360px] lg:h-[440px] lg:w-[440px]" aria-hidden="true">
+              <div data-orbit-ring className="orbit-ring h-full w-full rounded-full border border-yellow-200/[0.18] shadow-[0_0_54px_rgba(247,215,116,0.07)]" />
+            </div>
             {certificates.map((certificate, index) => (
               <CertificateCard key={certificate} label={certificate} index={index} />
             ))}
-            <div className="absolute left-1/2 top-1/2 grid h-28 w-28 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-cyan-200/30 bg-black shadow-[0_0_60px_rgba(103,232,249,0.18)] sm:h-32 sm:w-32 lg:h-40 lg:w-40">
+            <div className="certificate-core absolute left-1/2 top-1/2 grid h-28 w-28 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-cyan-200/30 bg-black shadow-[0_0_48px_rgba(103,232,249,0.16)] sm:h-32 sm:w-32 lg:h-40 lg:w-40">
               <GraduationCap className="h-10 w-10 text-cyan-100 sm:h-12 sm:w-12 lg:h-14 lg:w-14" />
             </div>
           </div>
@@ -628,27 +831,55 @@ export default function CinematicCertifindStory() {
 
         <div className={`${sceneContainer} lg:grid-cols-[1.05fr_0.8fr]`}>
           <div data-parallax-slow className="cinematic-corridor cinematic-perspective relative min-h-[480px] overflow-hidden rounded-[2rem] border border-cyan-200/10 bg-black shadow-[0_0_95px_rgba(103,232,249,0.07)] sm:min-h-[560px] lg:min-h-[640px] lg:rounded-[2.75rem]">
-            <div className="absolute inset-x-[16%] bottom-0 top-14 bg-[linear-gradient(90deg,transparent,rgba(103,232,249,0.10),transparent)]" aria-hidden="true" />
-            {[0, 1, 2, 3, 4].map((panel) => (
-              <div
-                key={panel}
-                data-corridor-panel
-                className="absolute left-1/2 top-1/2 h-[76%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] border border-cyan-200/[0.12]"
-                style={{ transform: `translate(-50%, -50%) translateZ(${-panel * 95}px) scale(${1 - panel * 0.1})` }}
-              />
-            ))}
-            <div className="absolute bottom-20 left-1/2 flex -translate-x-1/2 flex-col items-center">
-              <div className="grid h-20 w-20 place-items-center rounded-full border border-cyan-200/[0.36] bg-cyan-200/10 shadow-[0_0_70px_rgba(103,232,249,0.25)] sm:h-24 sm:w-24">
-                <User className="h-8 w-8 text-cyan-100 sm:h-10 sm:w-10" />
-              </div>
-              <div className="mt-4 h-32 w-1 rounded-full bg-gradient-to-b from-cyan-200 to-transparent" />
-            </div>
-            <div className="absolute left-8 top-10 space-y-4 sm:left-12">
-              {achievements.map((achievement) => (
-                <div key={achievement} className="rounded-full border border-yellow-200/20 bg-yellow-200/[0.08] px-4 py-2 text-sm font-bold text-yellow-100 shadow-[0_0_32px_rgba(247,215,116,0.10)]">
-                  {achievement}
-                </div>
+            <div data-corridor-tilt className="absolute inset-0 rounded-[inherit] will-change-transform">
+              <div data-corridor-horizon className="absolute left-1/2 top-[18%] h-px w-[62%] -translate-x-1/2 bg-gradient-to-r from-transparent via-cyan-100/60 to-transparent shadow-[0_0_36px_rgba(103,232,249,0.45)]" aria-hidden="true" />
+              <div className="absolute inset-x-[16%] bottom-0 top-14 bg-[linear-gradient(90deg,transparent,rgba(103,232,249,0.10),transparent)]" aria-hidden="true" />
+
+              {corridorFloorLights.map((light) => (
+                <div
+                  key={light}
+                  data-corridor-light
+                  className="corridor-floor-light absolute left-1/2 h-px rounded-full bg-cyan-100/70 shadow-[0_0_34px_rgba(103,232,249,0.38)]"
+                  style={
+                    {
+                      "--corridor-light-bottom": `${16 + light * 10}%`,
+                      "--corridor-light-width": `${24 + light * 9}%`,
+                    } as CSSProperties
+                  }
+                  aria-hidden="true"
+                />
               ))}
+
+              {[0, 1, 2, 3, 4].map((panel) => (
+                <div
+                  key={panel}
+                  data-corridor-panel
+                  className="absolute left-1/2 top-1/2 h-[76%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] border border-cyan-200/[0.12] shadow-[inset_0_0_32px_rgba(103,232,249,0.05)]"
+                  style={{ transform: `translate(-50%, -50%) translateZ(${-panel * 95}px) scale(${1 - panel * 0.1})` }}
+                />
+              ))}
+
+              <div data-corridor-avatar className="absolute bottom-20 left-1/2 flex -translate-x-1/2 flex-col items-center will-change-transform">
+                <div data-corridor-avatar-core className="corridor-avatar-core grid h-20 w-20 place-items-center rounded-full border border-cyan-200/[0.42] bg-cyan-200/10 shadow-[0_0_70px_rgba(103,232,249,0.25)] sm:h-24 sm:w-24">
+                  <User className="h-8 w-8 text-cyan-100 sm:h-10 sm:w-10" />
+                </div>
+                <div data-corridor-trail className="mt-4 h-36 w-1 rounded-full bg-gradient-to-b from-cyan-100 via-violet-300/70 to-transparent shadow-[0_0_34px_rgba(103,232,249,0.35)]" />
+              </div>
+
+              <div className="absolute left-5 top-8 space-y-3 sm:left-10 sm:top-10 sm:space-y-4">
+                {achievements.map((achievement, index) => (
+                  <div
+                    key={achievement}
+                    data-corridor-achievement
+                    data-hoverable
+                    className="group relative rounded-full border border-yellow-200/20 bg-yellow-200/[0.08] px-4 py-2 text-xs font-bold text-yellow-100 shadow-[0_0_32px_rgba(247,215,116,0.10)] backdrop-blur-md transition duration-500 hover:-translate-y-1 hover:border-yellow-100/45 hover:bg-yellow-200/[0.14] sm:text-sm"
+                  >
+                    <span data-corridor-achievement-line className="absolute left-full top-1/2 hidden h-px w-16 origin-left bg-gradient-to-r from-yellow-200/55 to-transparent shadow-[0_0_18px_rgba(247,215,116,0.28)] sm:block" aria-hidden="true" />
+                    <span className="mr-2 text-cyan-100/80">0{index + 1}</span>
+                    {achievement}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

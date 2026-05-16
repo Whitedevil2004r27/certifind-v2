@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { BookMarked, Loader2, ShieldCheck, User, Zap } from "lucide-react";
 import RealtimeCourseModule from "@/components/courses/RealtimeCourseModule";
 
@@ -81,8 +82,15 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
               <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-black/35">
                 {user.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.image} alt={user.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                  <Image
+                    src={user.image}
+                    alt={user.name}
+                    width={80}
+                    height={80}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                    unoptimized
+                  />
                 ) : (
                   <User className="h-9 w-9 text-cyan-300" />
                 )}
