@@ -121,24 +121,35 @@
   }
 
   .certificate-stage {
+    --cert-radius: clamp(5.5rem, 24vw, 10.75rem);
     contain: layout paint style;
     isolation: isolate;
+  }
+
+  .certificate-orbit-area {
+    height: clamp(17rem, 58vw, 27.5rem);
+    width: clamp(17rem, 58vw, 27.5rem);
   }
 
   .certificate-card {
     backface-visibility: hidden;
     contain: layout paint style;
-    transform: translate3d(-50%, -50%, 0) rotateZ(var(--cert-angle)) translate3d(0, -5rem, 0) rotateZ(var(--cert-counter-angle));
+    transform: translate3d(-50%, -50%, 0) rotateZ(var(--cert-angle)) translate3d(0, calc(var(--cert-radius) * -1), 0) rotateZ(var(--cert-counter-angle));
     transform-style: preserve-3d;
     will-change: transform;
   }
 
   .certificate-card-inner,
-  .orbit-ring,
-  .certificate-core {
+  .orbit-ring {
     backface-visibility: hidden;
     contain: layout paint style;
     transform: translateZ(0);
+  }
+
+  .certificate-core {
+    backface-visibility: hidden;
+    contain: layout paint style;
+    transform: translate3d(-50%, -50%, 0);
   }
 
   .certificate-card-inner,
@@ -154,22 +165,26 @@
 
 @media (min-width: 640px) {
   @layer utilities {
-    .certificate-card {
-      transform: translate3d(-50%, -50%, 0) rotateZ(var(--cert-angle)) translate3d(0, -9.75rem, 0) rotateZ(var(--cert-counter-angle));
+    .certificate-stage {
+      --cert-radius: clamp(9rem, 22vw, 10.625rem);
     }
   }
 }
 
 @media (min-width: 1024px) {
   @layer utilities {
-    .certificate-card {
-      transform: translate3d(-50%, -50%, 0) rotateZ(var(--cert-angle)) translate3d(0, -10.625rem, 0) rotateZ(var(--cert-counter-angle));
+    .certificate-stage {
+      --cert-radius: clamp(9.5rem, 12.5vw, 11.25rem);
     }
   }
 }
 
 @media (max-width: 640px) {
   @layer utilities {
+    .certificate-stage {
+      --cert-radius: 0;
+    }
+
     .certificate-card {
       left: var(--cert-mobile-left);
       top: var(--cert-mobile-top);

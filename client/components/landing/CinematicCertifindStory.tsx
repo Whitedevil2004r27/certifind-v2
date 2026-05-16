@@ -39,10 +39,10 @@ const courseCards = [
 const certificates = ["Frontend", "Data", "Cloud", "AI", "Product"];
 const mobileCertificatePositions = [
   { left: "50%", top: "16%" },
-  { left: "74%", top: "36%" },
-  { left: "68%", top: "84%" },
-  { left: "32%", top: "84%" },
-  { left: "26%", top: "36%" },
+  { left: "80%", top: "40%" },
+  { left: "70%", top: "77%" },
+  { left: "30%", top: "77%" },
+  { left: "20%", top: "40%" },
 ];
 
 const roadmapNodes = [
@@ -223,7 +223,7 @@ function CertificateCard({ label, index }: { label: string; index: number }) {
   return (
     <div
       data-certificate-shell
-      className="certificate-card absolute left-1/2 top-1/2 h-20 w-24 sm:h-32 sm:w-48 lg:h-36 lg:w-56"
+      className="certificate-card absolute left-1/2 top-1/2 h-24 w-28 sm:h-32 sm:w-48 lg:h-36"
       style={
         {
           "--cert-angle": `${index * 72}deg`,
@@ -236,11 +236,13 @@ function CertificateCard({ label, index }: { label: string; index: number }) {
       <div
         data-certificate-card
         data-hoverable
-        className="certificate-card-inner h-full w-full rounded-2xl border border-yellow-200/40 bg-[linear-gradient(135deg,rgba(247,215,116,0.18),rgba(255,255,255,0.04))] p-2.5 text-yellow-50 shadow-[0_0_34px_rgba(247,215,116,0.13)] backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-500 hover:border-yellow-100/60 hover:shadow-[0_0_46px_rgba(247,215,116,0.18)] sm:p-5 lg:shadow-[0_0_54px_rgba(247,215,116,0.16)]"
+        className="certificate-card-inner flex h-full w-full flex-col justify-between rounded-2xl border border-yellow-200/40 bg-[linear-gradient(135deg,rgba(247,215,116,0.18),rgba(255,255,255,0.04))] p-3 text-left text-yellow-50 shadow-[0_0_34px_rgba(247,215,116,0.13)] backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-500 hover:border-yellow-100/60 hover:shadow-[0_0_46px_rgba(247,215,116,0.18)] sm:p-5 lg:shadow-[0_0_54px_rgba(247,215,116,0.16)]"
       >
         <Award className="h-4 w-4 text-yellow-200 sm:h-7 sm:w-7 lg:h-8 lg:w-8" />
-        <p className="mt-3 text-[9px] uppercase leading-none text-yellow-100/70 sm:mt-6 sm:text-xs lg:mt-8">Verified path</p>
-        <h3 className="mt-1 text-sm font-black tracking-tight text-white sm:text-xl lg:text-2xl">{label}</h3>
+        <div>
+          <p className="text-[9px] uppercase leading-none text-yellow-100/70 sm:text-xs">Verified path</p>
+          <h3 className="mt-1 text-sm font-black tracking-tight text-white sm:text-xl lg:text-2xl">{label}</h3>
+        </div>
       </div>
     </div>
   );
@@ -768,20 +770,21 @@ export default function CinematicCertifindStory() {
         <div className="absolute inset-0 -z-20 bg-black" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_50%,rgba(247,215,116,0.14),transparent_34%),radial-gradient(circle_at_20%_20%,rgba(139,92,246,0.13),transparent_32%)]" aria-hidden="true" />
 
-        <div className={`${sceneContainer} lg:grid-cols-[1.05fr_0.8fr]`}>
-          <div data-parallax-slow className="certificate-stage cinematic-perspective relative min-h-[460px] overflow-hidden rounded-[2rem] border border-yellow-200/[0.12] bg-white/[0.025] sm:min-h-[540px] lg:min-h-[620px] lg:rounded-[2.75rem]">
-            <div className="absolute left-1/2 top-1/2 h-[290px] w-[290px] -translate-x-1/2 -translate-y-1/2 sm:h-[360px] sm:w-[360px] lg:h-[440px] lg:w-[440px]" aria-hidden="true">
+        <div className={`${sceneContainer} items-center lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.82fr)] xl:grid-cols-[minmax(620px,1.02fr)_minmax(360px,0.78fr)]`}>
+          <div data-parallax-slow className="certificate-stage cinematic-perspective relative mx-auto flex min-h-[430px] w-full max-w-[680px] items-center justify-center overflow-hidden rounded-[2rem] border border-yellow-200/[0.12] bg-white/[0.025] p-4 shadow-[0_0_100px_rgba(247,215,116,0.045)] sm:min-h-[540px] sm:p-6 lg:min-h-[620px] lg:max-w-none lg:rounded-[2.75rem] lg:p-8">
+            <div className="absolute inset-4 rounded-[1.5rem] border border-white/[0.045] bg-[radial-gradient(circle_at_50%_46%,rgba(247,215,116,0.10),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.045),transparent_48%)] sm:inset-6 lg:inset-8 lg:rounded-[2rem]" aria-hidden="true" />
+            <div className="certificate-orbit-area absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" aria-hidden="true">
               <div data-orbit-ring className="orbit-ring h-full w-full rounded-full border border-yellow-200/[0.18] shadow-[0_0_54px_rgba(247,215,116,0.07)]" />
             </div>
             {certificates.map((certificate, index) => (
               <CertificateCard key={certificate} label={certificate} index={index} />
             ))}
-            <div className="certificate-core absolute left-1/2 top-1/2 grid h-28 w-28 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-cyan-200/30 bg-black shadow-[0_0_48px_rgba(103,232,249,0.16)] sm:h-32 sm:w-32 lg:h-40 lg:w-40">
+            <div className="certificate-core absolute left-1/2 top-1/2 grid h-24 w-24 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-cyan-200/30 bg-black shadow-[0_0_48px_rgba(103,232,249,0.16)] sm:h-32 sm:w-32 lg:h-36 lg:w-36 xl:h-40 xl:w-40">
               <GraduationCap className="h-10 w-10 text-cyan-100 sm:h-12 sm:w-12 lg:h-14 lg:w-14" />
             </div>
           </div>
 
-          <div className="max-w-3xl">
+          <div className="mx-auto max-w-3xl text-center lg:mx-0 lg:max-w-xl lg:text-left">
             <p data-reveal className="text-sm font-semibold uppercase text-yellow-100/[0.76]">Scene Three</p>
             <h2 data-reveal className={sectionHeading}>
               Every lesson becomes proof. Every certificate becomes power.
