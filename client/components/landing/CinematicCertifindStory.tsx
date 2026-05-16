@@ -46,10 +46,10 @@ const mobileCertificatePositions = [
 ];
 
 const roadmapNodes = [
-  { role: "Frontend Developer", x: "10%", y: "28%", mobileX: "7%", mobileY: "24%", tone: "cyan" },
-  { role: "Data Analyst", x: "58%", y: "18%", mobileX: "50%", mobileY: "18%", tone: "violet" },
-  { role: "Cloud Engineer", x: "72%", y: "58%", mobileX: "50%", mobileY: "58%", tone: "gold" },
-  { role: "AI Engineer", x: "24%", y: "70%", mobileX: "8%", mobileY: "68%", tone: "cyan" },
+  { role: "Frontend Developer", x: "22%", y: "33%", mobileX: "26%", mobileY: "22%", tone: "cyan" },
+  { role: "Data Analyst", x: "63%", y: "26%", mobileX: "74%", mobileY: "22%", tone: "violet" },
+  { role: "Cloud Engineer", x: "78%", y: "61%", mobileX: "74%", mobileY: "78%", tone: "gold" },
+  { role: "AI Engineer", x: "31%", y: "75%", mobileX: "26%", mobileY: "78%", tone: "cyan" },
 ];
 
 const achievements = ["React verified", "Python certified", "Cloud ready", "AI portfolio"];
@@ -260,7 +260,7 @@ function RoadmapNode({ role, x, y, mobileX, mobileY, tone }: (typeof roadmapNode
     <div
       data-road-node
       data-hoverable
-      className={`roadmap-node absolute max-w-[8.75rem] rounded-2xl border p-3 text-xs font-black leading-snug text-white backdrop-blur-2xl transition duration-700 hover:-translate-y-1 sm:min-w-44 sm:max-w-none sm:p-4 sm:text-sm ${toneClass}`}
+      className="roadmap-node group absolute"
       style={
         {
           "--road-x": x,
@@ -270,8 +270,15 @@ function RoadmapNode({ role, x, y, mobileX, mobileY, tone }: (typeof roadmapNode
         } as CSSProperties
       }
     >
-      <Compass className="mb-3 h-4 w-4 text-cyan-200 sm:mb-4 sm:h-5 sm:w-5" />
-      {role}
+      <div className="roadmap-node-hover transition-transform duration-700 group-hover:-translate-y-1">
+        <div
+          data-road-node-card
+          className={`flex h-20 w-28 flex-col justify-between rounded-2xl border p-3 text-left text-xs font-black leading-snug text-white backdrop-blur-2xl transition-[border-color,background-color,box-shadow] duration-700 sm:h-24 sm:w-44 sm:p-4 sm:text-sm lg:h-28 lg:w-48 ${toneClass}`}
+        >
+          <Compass className="h-4 w-4 shrink-0 text-cyan-200 sm:h-5 sm:w-5" />
+          <span>{role}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -484,20 +491,45 @@ export default function CinematicCertifindStory() {
           }
         }
 
-        gsap.fromTo(
-          "[data-road-line]",
-          { scaleX: 0, transformOrigin: "left center" },
-          {
-            scaleX: 1,
-            stagger: 0.08,
-            duration: 1.05,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: "[data-scene='roadmap']",
-              start: "top 62%",
-            },
-          }
-        );
+        const roadmapScene = root.querySelector<HTMLElement>("[data-scene='roadmap']");
+        if (roadmapScene) {
+          const roadLines = roadmapScene.querySelectorAll<SVGPathElement>("[data-road-line]");
+          const roadNodeCards = roadmapScene.querySelectorAll<HTMLElement>("[data-road-node-card]");
+
+          gsap.fromTo(
+            roadLines,
+            { scaleX: 0, transformOrigin: "center center" },
+            {
+              scaleX: 1,
+              stagger: 0.06,
+              duration: 0.95,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: roadmapScene,
+                start: "top 62%",
+              },
+            }
+          );
+
+          gsap.fromTo(
+            roadNodeCards,
+            { autoAlpha: 0, scale: 0.92, y: 12 },
+            {
+              autoAlpha: 1,
+              scale: 1,
+              y: 0,
+              stagger: 0.07,
+              duration: 0.72,
+              ease: "power2.out",
+              force3D: true,
+              scrollTrigger: {
+                trigger: roadmapScene,
+                start: "top 58%",
+                once: true,
+              },
+            }
+          );
+        }
 
         const corridorScene = root.querySelector<HTMLElement>("[data-scene='corridor']");
         if (corridorScene) {
@@ -800,8 +832,8 @@ export default function CinematicCertifindStory() {
         <div className="absolute inset-0 -z-20 bg-black" />
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_65%_48%,rgba(103,232,249,0.14),transparent_36%),linear-gradient(180deg,rgba(139,92,246,0.08),transparent_45%)]" aria-hidden="true" />
 
-        <div className={`${sceneContainer} lg:grid-cols-[0.78fr_1.12fr]`}>
-          <div className="max-w-3xl">
+        <div className={`${sceneContainer} items-center lg:grid-cols-[minmax(320px,0.82fr)_minmax(0,1.08fr)] xl:grid-cols-[minmax(360px,0.78fr)_minmax(620px,1.12fr)]`}>
+          <div className="mx-auto max-w-3xl text-center lg:mx-0 lg:max-w-xl lg:text-left">
             <p data-reveal className="text-sm font-semibold uppercase text-cyan-200/[0.76]">Scene Four</p>
             <h2 data-reveal className={sectionHeading}>
               CertiFind does not just show courses. It reveals your next direction.
@@ -811,19 +843,29 @@ export default function CinematicCertifindStory() {
             </p>
           </div>
 
-          <div data-parallax-deep className="relative min-h-[460px] overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.025] p-4 shadow-[0_0_95px_rgba(139,92,246,0.08)] sm:min-h-[540px] sm:p-6 lg:min-h-[620px] lg:rounded-[2.75rem]">
-            <svg className="absolute inset-0 h-full w-full text-cyan-200/[0.26]" viewBox="0 0 900 620" aria-hidden="true">
-              <path data-road-line d="M120 210 C270 130 420 130 540 168" stroke="currentColor" strokeWidth="2" fill="none" />
-              <path data-road-line d="M545 168 C670 240 710 300 724 358" stroke="currentColor" strokeWidth="2" fill="none" />
-              <path data-road-line d="M722 360 C560 430 420 444 272 438" stroke="currentColor" strokeWidth="2" fill="none" />
-              <path data-road-line d="M272 438 C210 360 154 296 120 210" stroke="currentColor" strokeWidth="2" fill="none" />
-            </svg>
-            <div className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/[0.18] bg-black shadow-[0_0_58px_rgba(103,232,249,0.18)] sm:h-24 sm:w-24 lg:h-28 lg:w-28">
-              <Orbit className="h-7 w-7 text-cyan-100 sm:h-9 sm:w-9 lg:h-10 lg:w-10" />
+          <div data-parallax-deep className="roadmap-stage cinematic-perspective relative mx-auto flex min-h-[430px] w-full max-w-[720px] items-center justify-center overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.025] p-4 shadow-[0_0_95px_rgba(139,92,246,0.08)] sm:min-h-[540px] sm:p-6 lg:min-h-[620px] lg:max-w-none lg:rounded-[2.75rem] lg:p-8">
+            <div className="pointer-events-none absolute inset-4 rounded-[1.5rem] border border-cyan-200/[0.06] bg-[radial-gradient(circle_at_50%_48%,rgba(103,232,249,0.08),transparent_38%)] sm:inset-6 lg:inset-8 lg:rounded-[2rem]" aria-hidden="true" />
+
+            <div className="roadmap-network-area absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <svg className="absolute inset-0 h-full w-full overflow-visible text-cyan-200/[0.28]" viewBox="0 0 100 100" aria-hidden="true">
+                <path data-road-line d="M22 33 C34 19 48 18 63 26" stroke="currentColor" strokeWidth="1.25" fill="none" strokeLinecap="round" />
+                <path data-road-line d="M63 26 C76 31 82 45 78 61" stroke="currentColor" strokeWidth="1.25" fill="none" strokeLinecap="round" />
+                <path data-road-line d="M78 61 C64 76 45 82 31 75" stroke="currentColor" strokeWidth="1.25" fill="none" strokeLinecap="round" />
+                <path data-road-line d="M31 75 C20 64 16 47 22 33" stroke="currentColor" strokeWidth="1.25" fill="none" strokeLinecap="round" />
+                <path data-road-line d="M50 50 C45 42 35 38 22 33" stroke="currentColor" strokeWidth="0.9" fill="none" strokeLinecap="round" />
+                <path data-road-line d="M50 50 C56 40 61 34 63 26" stroke="currentColor" strokeWidth="0.9" fill="none" strokeLinecap="round" />
+                <path data-road-line d="M50 50 C62 52 71 56 78 61" stroke="currentColor" strokeWidth="0.9" fill="none" strokeLinecap="round" />
+                <path data-road-line d="M50 50 C44 62 38 70 31 75" stroke="currentColor" strokeWidth="0.9" fill="none" strokeLinecap="round" />
+              </svg>
+
+              <div className="roadmap-core absolute left-1/2 top-1/2 grid h-20 w-20 place-items-center rounded-full border border-white/[0.18] bg-black shadow-[0_0_58px_rgba(103,232,249,0.18)] sm:h-24 sm:w-24 lg:h-28 lg:w-28">
+                <Orbit className="h-7 w-7 text-cyan-100 sm:h-9 sm:w-9 lg:h-10 lg:w-10" />
+              </div>
+
+              {roadmapNodes.map((node) => (
+                <RoadmapNode key={node.role} {...node} />
+              ))}
             </div>
-            {roadmapNodes.map((node) => (
-              <RoadmapNode key={node.role} {...node} />
-            ))}
           </div>
         </div>
       </section>

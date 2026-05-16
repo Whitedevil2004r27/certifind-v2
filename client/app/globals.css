@@ -158,54 +158,82 @@
   }
 
   .roadmap-node {
+    backface-visibility: hidden;
     left: var(--road-x);
+    transform: translate3d(-50%, -50%, 0);
+    transform-style: preserve-3d;
     top: var(--road-y);
+    will-change: transform;
+  }
+
+  .roadmap-node-hover,
+  .roadmap-node [data-road-node-card] {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+  }
+
+  .roadmap-stage {
+    contain: layout paint style;
+    isolation: isolate;
+  }
+
+  .roadmap-network-area {
+    height: clamp(430px, 46vw, 520px);
+    width: clamp(520px, 58vw, 640px);
+  }
+
+  .roadmap-core {
+    backface-visibility: hidden;
+    contain: layout paint style;
+    transform: translate3d(-50%, -50%, 0);
+    will-change: transform, opacity;
   }
 }
 
 @media (min-width: 640px) {
-  @layer utilities {
-    .certificate-stage {
-      --cert-radius: clamp(9rem, 22vw, 10.625rem);
-    }
+  .certificate-stage {
+    --cert-radius: clamp(9rem, 22vw, 10.625rem);
   }
 }
 
 @media (min-width: 1024px) {
-  @layer utilities {
-    .certificate-stage {
-      --cert-radius: clamp(9.5rem, 12.5vw, 11.25rem);
-    }
+  .certificate-stage {
+    --cert-radius: clamp(9.5rem, 12.5vw, 11.25rem);
   }
 }
 
 @media (max-width: 640px) {
-  @layer utilities {
-    .certificate-stage {
-      --cert-radius: 0;
-    }
+  .certificate-stage {
+    --cert-radius: 0;
+  }
 
-    .certificate-card {
-      left: var(--cert-mobile-left);
-      top: var(--cert-mobile-top);
-      transform: translate3d(-50%, -50%, 0);
-    }
+  .certificate-card {
+    left: var(--cert-mobile-left);
+    top: var(--cert-mobile-top);
+    transform: translate3d(-50%, -50%, 0);
+  }
 
-    .roadmap-node {
-      left: var(--road-mobile-x);
-      top: var(--road-mobile-y);
-    }
+  .roadmap-node {
+    left: var(--road-mobile-x);
+    top: var(--road-mobile-y);
+  }
 
-    .growth-branch {
-      left: var(--branch-mobile-left);
-    }
+  .roadmap-network-area {
+    height: clamp(296px, 74vw, 352px);
+    width: min(100%, 320px);
+  }
 
-    .growth-label {
-      min-width: 5.75rem;
-      padding: 0.4rem 0.65rem;
-      font-size: 0.6875rem;
-      line-height: 1rem;
-    }
+  .growth-branch {
+    left: var(--branch-mobile-left);
+  }
+
+  .growth-label {
+    min-width: 5.75rem;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.6875rem;
+    line-height: 1rem;
   }
 }
 
